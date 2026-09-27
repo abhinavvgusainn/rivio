@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rivio/app/app.dart';
 import 'package:rivio/database/database.dart';
+import 'package:rivio/features/flashcards/flashcards_screen.dart';
+import 'package:rivio/features/flashcards/review_screen.dart';
+import 'package:rivio/features/flashcards/widgets/deck_card.dart';
+import 'package:rivio/features/notes/note_subject_screen.dart';
+import 'package:rivio/features/notes/notes_screen.dart';
+import 'package:rivio/services/ads_service.dart';
 
 void main() {
   late AppDatabase database;
@@ -52,21 +58,21 @@ void main() {
   ) async {
     await tester.pumpWidget(RivioApp(database: database));
     await tester.pumpAndSettle();
-    expect(find.text('StudyFlow'), findsOneWidget);
+    expect(find.text('Rivio'), findsOneWidget);
 
     await tester.drag(
       find.byType(CustomScrollView).first,
       const Offset(0, -500),
     );
     await tester.pumpAndSettle();
-    expect(find.text('StudyFlow'), findsNothing);
+    expect(find.text('Rivio'), findsNothing);
 
     await tester.drag(
       find.byType(CustomScrollView).first,
       const Offset(0, 140),
     );
     await tester.pumpAndSettle();
-    expect(find.text('StudyFlow'), findsOneWidget);
+    expect(find.text('Rivio'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));
@@ -118,6 +124,136 @@ void main() {
     expect(reviews.single.known, isTrue);
     expect(reviews.single.subjectId, subjectId);
     expect(sessions.single.cardsReviewed, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('study review opens directly below the selected deck', (
+    tester,
+  ) async {
+    final subjectId = await database.createFlashcardSubject('Biology');
+    for (final name in ['Cells', 'Genetics']) {
+      final deckId = await database.createDeck(
+        subjectId: subjectId,
+        name: name,
+      );
+      await database.addCard(
+        deckId: deckId,
+        front: '$name question',
+        back: '$name answer',
+      );
+    }
+
+    await tester.pumpWidget(RivioApp(database: database));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Flashcards'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byType(CustomScrollView).last,
+      const Offset(0, -1000),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(FlashcardsScreen),
+        matching: find.byType(InlineNativeAd),
+      ),
+      findsOneWidget,
+    );
+
+    final deckCards = find.byType(DeckCard);
+    await tester.ensureVisible(deckCards.at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: deckCards.at(1), matching: find.text('Study')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FlashcardReviewPanel), findsOneWidget);
+    expect(
+      tester.getRect(find.byType(FlashcardReviewPanel)).top,
+      greaterThan(tester.getRect(deckCards.at(1)).bottom),
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('new flashcard focuses Question and opens the keyboard', (
+    tester,
+  ) async {
+    final subjectId = await database.createFlashcardSubject('Biology');
+    await database.createDeck(subjectId: subjectId, name: 'Cells');
+
+    await tester.pumpWidget(RivioApp(database: database));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Flashcards'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Cells'));
+    await tester.tap(find.text('Cells'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add card'));
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextFormField);
+    expect(fields, findsNWidgets(2));
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(of: fields.first, matching: find.byType(TextField)),
+          )
+          .autofocus,
+      isTrue,
+    );
+    expect(tester.testTextInput.isVisible, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 1));
+  });
+
+  testWidgets('Notes has one ad slot on the list and inside each folder', (
+    tester,
+  ) async {
+    await database.createNoteSubject('Biology');
+    await tester.pumpWidget(RivioApp(database: database));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Notes'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(NotesScreen),
+        matching: find.byType(InlineNativeAd),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Biology'));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(NoteSubjectScreen),
+        matching: find.byType(InlineNativeAd),
+      ),
+      findsOneWidget,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));

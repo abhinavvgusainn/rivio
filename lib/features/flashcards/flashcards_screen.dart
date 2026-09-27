@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../app/widgets/study_widgets.dart';
 import '../../database/database.dart';
+import '../../services/ads_service.dart';
 import '../../services/interaction_feedback.dart';
 import '../notes/widgets/add_subject_dialog.dart';
 import 'deck_screen.dart';
@@ -64,13 +65,23 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
               card.nextReviewAt == null || !card.nextReviewAt!.isAfter(now),
         )
         .toList();
-    setState(
-      () => _activeReview = _ReviewTarget(
-        deck: deck,
-        subjectName: subject.name,
-        cards: due.isEmpty ? cards : due,
-      ),
+    final target = _ReviewTarget(
+      deck: deck,
+      subjectName: subject.name,
+      cards: due.isEmpty ? cards : due,
+      anchorKey: GlobalKey(),
     );
+    setState(() => _activeReview = target);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final anchor = target.anchorKey.currentContext;
+      if (!mounted || anchor == null) return;
+      Scrollable.ensureVisible(
+        anchor,
+        alignment: 0.08,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    });
     InteractionFeedback.tap();
   }
 
@@ -183,7 +194,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
         final visibleSubjects = subjects
             .where(
               (subject) =>
-                  _subjectFilter == null || subject.id == _subjectFilter,
+                  _subjectFilter == null ||
+                  subject.id == _subjectFilter ||
+                  subject.id == _activeReview?.deck.subjectId,
             )
             .toList();
         final slivers = <Widget>[
@@ -216,26 +229,19 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
           }
         }
 
-        final activeReview = _activeReview;
-        if (activeReview != null) {
+        if (_query.isEmpty && visibleSubjects.isNotEmpty) {
           slivers.add(
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
               sliver: SliverToBoxAdapter(
-                child: FlashcardReviewPanel(
-                  key: ValueKey(activeReview.deck.id),
-                  database: widget.database,
-                  deck: activeReview.deck,
-                  subjectName: activeReview.subjectName,
-                  cards: activeReview.cards,
-                  onFinished: () {
-                    if (mounted) setState(() => _activeReview = null);
-                  },
+                child: InlineNativeAd(
+                  adUnitId: AdsService.instance.flashcardsNativeAdUnitId,
                 ),
               ),
             ),
           );
         }
+
         slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 92)));
         return CustomScrollView(slivers: slivers);
       },
@@ -392,7 +398,23 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
                     tint: const Color(0xFFF1F4F1),
                   ),
                 ),
-              for (final deck in decks) _deckTile(deck, subject, query),
+              for (final deck in decks) ...[
+                _deckTile(deck, subject, query),
+                if (_activeReview?.deck.id == deck.id)
+                  Padding(
+                    key: _activeReview!.anchorKey,
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: FlashcardReviewPanel(
+                      database: widget.database,
+                      deck: _activeReview!.deck,
+                      subjectName: _activeReview!.subjectName,
+                      cards: _activeReview!.cards,
+                      onFinished: () {
+                        if (mounted) setState(() => _activeReview = null);
+                      },
+                    ),
+                  ),
+              ],
               OutlinedButton.icon(
                 onPressed: () => _createDeck(subject),
                 icon: const Icon(Icons.add, size: 18),
@@ -422,6 +444,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> {
       final cards = cardSnapshot.data ?? const <Flashcard>[];
       final matches =
           query.isEmpty ||
+          _activeReview?.deck.id == deck.id ||
           subject.name.toLowerCase().contains(query) ||
           deck.name.toLowerCase().contains(query) ||
           cards.any(
@@ -458,8 +481,10 @@ class _ReviewTarget {
     required this.deck,
     required this.subjectName,
     required this.cards,
+    required this.anchorKey,
   });
   final FlashcardDeck deck;
   final String subjectName;
   final List<Flashcard> cards;
+  final GlobalKey anchorKey;
 }

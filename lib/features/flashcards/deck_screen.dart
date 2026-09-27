@@ -32,7 +32,7 @@ class _DeckScreenState extends State<DeckScreen> {
     final card = await showAddCardForm(context);
     if (card == null) return;
     await database.addCard(deckId: deck.id, front: card.front, back: card.back);
-    InteractionFeedback.tap();
+    InteractionFeedback.cardCreated();
   }
 
   Future<void> _editCard(BuildContext context, Flashcard card) async {

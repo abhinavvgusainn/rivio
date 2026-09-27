@@ -34,7 +34,7 @@ class _FlashcardViewState extends State<FlashcardView>
     }
     setState(() => _showBack = !_showBack);
     widget.onFlipped?.call(_showBack);
-    InteractionFeedback.tap();
+    InteractionFeedback.flip();
   }
 
   @override

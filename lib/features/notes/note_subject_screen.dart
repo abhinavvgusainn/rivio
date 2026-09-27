@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../app/widgets/study_widgets.dart';
 import '../../database/database.dart';
+import '../../services/ads_service.dart';
 import '../../services/file_service.dart';
 import 'widgets/pdf_tile.dart';
 
@@ -104,7 +105,7 @@ class _NoteSubjectScreenState extends State<NoteSubjectScreen> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'PDFs stay in their original device location. StudyFlow keeps a link for quick access.',
+                      'PDFs stay in their original device location. Rivio keeps a link for quick access.',
                       style: TextStyle(color: RivioColors.secondaryText),
                     ),
                   ],
@@ -140,6 +141,14 @@ class _NoteSubjectScreenState extends State<NoteSubjectScreen> {
                   },
                 ),
               ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(18, 20, 18, 112),
+              sliver: SliverToBoxAdapter(
+                child: InlineNativeAd(
+                  adUnitId: AdsService.instance.subjectNativeAdUnitId,
+                ),
+              ),
+            ),
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/ads_service.dart';
 import '../services/interaction_feedback.dart';
 
 class RivioColors {
@@ -104,7 +105,7 @@ class RivioTheme {
 }
 
 class StudySliverAppBar extends StatelessWidget {
-  const StudySliverAppBar({super.key, this.onSearch, this.title = 'StudyFlow'});
+  const StudySliverAppBar({super.key, this.onSearch, this.title = 'Rivio'});
 
   final VoidCallback? onSearch;
   final String title;
@@ -172,12 +173,24 @@ Future<void> showStudySettings(BuildContext context) =>
                   ),
                   value: InteractionFeedback.enabled,
                   onChanged: (enabled) =>
-                      setState(() => InteractionFeedback.enabled = enabled),
+                      setState(() => InteractionFeedback.setEnabled(enabled)),
                 ),
+              ),
+              ValueListenableBuilder<bool>(
+                valueListenable:
+                    AdsService.instance.privacyOptionsRequiredNotifier,
+                builder: (context, required, _) => required
+                    ? ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.privacy_tip_outlined),
+                        title: const Text('Privacy options'),
+                        onTap: () => AdsService.instance.showPrivacyOptions(),
+                      )
+                    : const SizedBox.shrink(),
               ),
               const ListTile(
                 leading: Icon(Icons.insights_outlined),
-                title: Text('StudyFlow'),
+                title: Text('Rivio'),
                 subtitle: Text('Your personal study tracker'),
               ),
             ],

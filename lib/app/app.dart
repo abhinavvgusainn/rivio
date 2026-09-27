@@ -7,6 +7,7 @@ import '../features/flashcards/flashcards_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/notes/notes_screen.dart';
 import '../features/pomodoro/pomodoro_screen.dart';
+import '../services/interaction_feedback.dart';
 import 'theme.dart';
 
 class RivioApp extends StatefulWidget {
@@ -37,8 +38,13 @@ class _RivioAppState extends State<RivioApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
-    title: 'StudyFlow',
+    title: 'Rivio',
     theme: RivioTheme.light,
+    builder: (context, child) => Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => InteractionFeedback.stopSound(),
+      child: child ?? const SizedBox.shrink(),
+    ),
     home: MainNavigation(database: _database),
   );
 }

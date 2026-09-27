@@ -60,6 +60,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _front,
+              autofocus: widget.initialFront == null,
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Question',

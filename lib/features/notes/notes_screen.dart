@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../app/widgets/study_widgets.dart';
 import '../../database/database.dart';
+import '../../services/ads_service.dart';
 import '../../services/file_service.dart';
 import 'note_subject_screen.dart';
 import 'widgets/add_subject_dialog.dart';
@@ -167,6 +168,19 @@ class _NotesScreenState extends State<NotesScreen> {
                           widget.database.deleteNoteSubject(subject.id),
                     );
                   },
+                ),
+              ),
+            );
+          }
+
+          if (_query.isEmpty && visibleSubjects.isNotEmpty) {
+            slivers.add(
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(18, 18, 18, 24),
+                sliver: SliverToBoxAdapter(
+                  child: InlineNativeAd(
+                    adUnitId: AdsService.instance.notesNativeAdUnitId,
+                  ),
                 ),
               ),
             );

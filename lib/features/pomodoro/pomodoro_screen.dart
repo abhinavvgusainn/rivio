@@ -243,18 +243,21 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
                   const SizedBox(height: 14),
                   _modeSelector(),
                   const SizedBox(height: 22),
-                  TimerDisplay(
-                    remaining: _remaining,
-                    total: _duration,
-                    label: _isFocus ? 'Focus Time' : 'Break Time',
-                    color: _isFocus ? RivioColors.green : RivioColors.coral,
+                  Center(
+                    child: TimerDisplay(
+                      remaining: _remaining,
+                      total: _duration,
+                      label: _isFocus ? 'Focus Time' : 'Break Time',
+                      color: _isFocus ? RivioColors.green : RivioColors.coral,
+                    ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 18),
                   TimerControls(
                     isRunning: _running,
                     onStartPause: _toggleTimer,
                     onReset: _reset,
                   ),
+                  const SizedBox(height: 5),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
@@ -385,15 +388,19 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
       borderRadius: BorderRadius.circular(30),
       border: Border.all(color: RivioColors.border),
     ),
-    child: SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _modePill(_TimerMode.pomodoro, 'Pomodoro'),
-          _modePill(_TimerMode.shortBreak, 'Short Break'),
-          _modePill(_TimerMode.longBreak, 'Long Break'),
-          _modePill(_TimerMode.custom, 'Custom'),
-        ],
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      clipBehavior: Clip.antiAlias,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _modePill(_TimerMode.pomodoro, 'Pomodoro'),
+            _modePill(_TimerMode.shortBreak, 'Short Break'),
+            _modePill(_TimerMode.longBreak, 'Long Break'),
+            _modePill(_TimerMode.custom, 'Custom'),
+          ],
+        ),
       ),
     ),
   );

@@ -112,7 +112,7 @@ class _FlashcardReviewPanelState extends State<FlashcardReviewPanel> {
       subjectId: widget.deck.subjectId,
     );
     if (!mounted) return;
-    InteractionFeedback.celebrate();
+    InteractionFeedback.deckCompleted();
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
