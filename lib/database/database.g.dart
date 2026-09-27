@@ -35,6 +35,18 @@ class $NoteSubjectsTable extends NoteSubjects
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _colorHexMeta = const VerificationMeta(
+    'colorHex',
+  );
+  @override
+  late final GeneratedColumn<String> colorHex = GeneratedColumn<String>(
+    'color_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('#15825B'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -48,7 +60,7 @@ class $NoteSubjectsTable extends NoteSubjects
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  List<GeneratedColumn> get $columns => [id, name, colorHex, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -71,6 +83,12 @@ class $NoteSubjectsTable extends NoteSubjects
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('color_hex')) {
+      context.handle(
+        _colorHexMeta,
+        colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -95,6 +113,10 @@ class $NoteSubjectsTable extends NoteSubjects
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      colorHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color_hex'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -111,10 +133,12 @@ class $NoteSubjectsTable extends NoteSubjects
 class NoteSubject extends DataClass implements Insertable<NoteSubject> {
   final int id;
   final String name;
+  final String colorHex;
   final DateTime createdAt;
   const NoteSubject({
     required this.id,
     required this.name,
+    required this.colorHex,
     required this.createdAt,
   });
   @override
@@ -122,6 +146,7 @@ class NoteSubject extends DataClass implements Insertable<NoteSubject> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    map['color_hex'] = Variable<String>(colorHex);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -130,6 +155,7 @@ class NoteSubject extends DataClass implements Insertable<NoteSubject> {
     return NoteSubjectsCompanion(
       id: Value(id),
       name: Value(name),
+      colorHex: Value(colorHex),
       createdAt: Value(createdAt),
     );
   }
@@ -142,6 +168,7 @@ class NoteSubject extends DataClass implements Insertable<NoteSubject> {
     return NoteSubject(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      colorHex: serializer.fromJson<String>(json['colorHex']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -151,20 +178,27 @@ class NoteSubject extends DataClass implements Insertable<NoteSubject> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'colorHex': serializer.toJson<String>(colorHex),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  NoteSubject copyWith({int? id, String? name, DateTime? createdAt}) =>
-      NoteSubject(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        createdAt: createdAt ?? this.createdAt,
-      );
+  NoteSubject copyWith({
+    int? id,
+    String? name,
+    String? colorHex,
+    DateTime? createdAt,
+  }) => NoteSubject(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    colorHex: colorHex ?? this.colorHex,
+    createdAt: createdAt ?? this.createdAt,
+  );
   NoteSubject copyWithCompanion(NoteSubjectsCompanion data) {
     return NoteSubject(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -174,44 +208,51 @@ class NoteSubject extends DataClass implements Insertable<NoteSubject> {
     return (StringBuffer('NoteSubject(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('colorHex: $colorHex, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt);
+  int get hashCode => Object.hash(id, name, colorHex, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is NoteSubject &&
           other.id == this.id &&
           other.name == this.name &&
+          other.colorHex == this.colorHex &&
           other.createdAt == this.createdAt);
 }
 
 class NoteSubjectsCompanion extends UpdateCompanion<NoteSubject> {
   final Value<int> id;
   final Value<String> name;
+  final Value<String> colorHex;
   final Value<DateTime> createdAt;
   const NoteSubjectsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.colorHex = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   NoteSubjectsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.colorHex = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<NoteSubject> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<String>? colorHex,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (colorHex != null) 'color_hex': colorHex,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -219,11 +260,13 @@ class NoteSubjectsCompanion extends UpdateCompanion<NoteSubject> {
   NoteSubjectsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
+    Value<String>? colorHex,
     Value<DateTime>? createdAt,
   }) {
     return NoteSubjectsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      colorHex: colorHex ?? this.colorHex,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -237,6 +280,9 @@ class NoteSubjectsCompanion extends UpdateCompanion<NoteSubject> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (colorHex.present) {
+      map['color_hex'] = Variable<String>(colorHex.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -248,6 +294,7 @@ class NoteSubjectsCompanion extends UpdateCompanion<NoteSubject> {
     return (StringBuffer('NoteSubjectsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('colorHex: $colorHex, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -639,6 +686,18 @@ class $FlashcardSubjectsTable extends FlashcardSubjects
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _colorHexMeta = const VerificationMeta(
+    'colorHex',
+  );
+  @override
+  late final GeneratedColumn<String> colorHex = GeneratedColumn<String>(
+    'color_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('#16845B'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -652,7 +711,7 @@ class $FlashcardSubjectsTable extends FlashcardSubjects
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, createdAt];
+  List<GeneratedColumn> get $columns => [id, name, colorHex, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -675,6 +734,12 @@ class $FlashcardSubjectsTable extends FlashcardSubjects
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('color_hex')) {
+      context.handle(
+        _colorHexMeta,
+        colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -699,6 +764,10 @@ class $FlashcardSubjectsTable extends FlashcardSubjects
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      colorHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color_hex'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -716,10 +785,12 @@ class FlashcardSubject extends DataClass
     implements Insertable<FlashcardSubject> {
   final int id;
   final String name;
+  final String colorHex;
   final DateTime createdAt;
   const FlashcardSubject({
     required this.id,
     required this.name,
+    required this.colorHex,
     required this.createdAt,
   });
   @override
@@ -727,6 +798,7 @@ class FlashcardSubject extends DataClass
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    map['color_hex'] = Variable<String>(colorHex);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -735,6 +807,7 @@ class FlashcardSubject extends DataClass
     return FlashcardSubjectsCompanion(
       id: Value(id),
       name: Value(name),
+      colorHex: Value(colorHex),
       createdAt: Value(createdAt),
     );
   }
@@ -747,6 +820,7 @@ class FlashcardSubject extends DataClass
     return FlashcardSubject(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      colorHex: serializer.fromJson<String>(json['colorHex']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -756,20 +830,27 @@ class FlashcardSubject extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'colorHex': serializer.toJson<String>(colorHex),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  FlashcardSubject copyWith({int? id, String? name, DateTime? createdAt}) =>
-      FlashcardSubject(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        createdAt: createdAt ?? this.createdAt,
-      );
+  FlashcardSubject copyWith({
+    int? id,
+    String? name,
+    String? colorHex,
+    DateTime? createdAt,
+  }) => FlashcardSubject(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    colorHex: colorHex ?? this.colorHex,
+    createdAt: createdAt ?? this.createdAt,
+  );
   FlashcardSubject copyWithCompanion(FlashcardSubjectsCompanion data) {
     return FlashcardSubject(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
+      colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -779,44 +860,51 @@ class FlashcardSubject extends DataClass
     return (StringBuffer('FlashcardSubject(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('colorHex: $colorHex, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, createdAt);
+  int get hashCode => Object.hash(id, name, colorHex, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is FlashcardSubject &&
           other.id == this.id &&
           other.name == this.name &&
+          other.colorHex == this.colorHex &&
           other.createdAt == this.createdAt);
 }
 
 class FlashcardSubjectsCompanion extends UpdateCompanion<FlashcardSubject> {
   final Value<int> id;
   final Value<String> name;
+  final Value<String> colorHex;
   final Value<DateTime> createdAt;
   const FlashcardSubjectsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.colorHex = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   FlashcardSubjectsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.colorHex = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<FlashcardSubject> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<String>? colorHex,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (colorHex != null) 'color_hex': colorHex,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -824,11 +912,13 @@ class FlashcardSubjectsCompanion extends UpdateCompanion<FlashcardSubject> {
   FlashcardSubjectsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
+    Value<String>? colorHex,
     Value<DateTime>? createdAt,
   }) {
     return FlashcardSubjectsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      colorHex: colorHex ?? this.colorHex,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -842,6 +932,9 @@ class FlashcardSubjectsCompanion extends UpdateCompanion<FlashcardSubject> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (colorHex.present) {
+      map['color_hex'] = Variable<String>(colorHex.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -853,6 +946,7 @@ class FlashcardSubjectsCompanion extends UpdateCompanion<FlashcardSubject> {
     return (StringBuffer('FlashcardSubjectsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('colorHex: $colorHex, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1235,12 +1329,34 @@ class $FlashcardsTable extends Flashcards
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _nextReviewAtMeta = const VerificationMeta(
+    'nextReviewAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> nextReviewAt = GeneratedColumn<DateTime>(
+    'next_review_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _timesReviewedMeta = const VerificationMeta(
     'timesReviewed',
   );
   @override
   late final GeneratedColumn<int> timesReviewed = GeneratedColumn<int>(
     'times_reviewed',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _consecutiveCorrectMeta =
+      const VerificationMeta('consecutiveCorrect');
+  @override
+  late final GeneratedColumn<int> consecutiveCorrect = GeneratedColumn<int>(
+    'consecutive_correct',
     aliasedName,
     false,
     type: DriftSqlType.int,
@@ -1255,7 +1371,9 @@ class $FlashcardsTable extends Flashcards
     back,
     createdAt,
     lastReviewedAt,
+    nextReviewAt,
     timesReviewed,
+    consecutiveCorrect,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1311,12 +1429,30 @@ class $FlashcardsTable extends Flashcards
         ),
       );
     }
+    if (data.containsKey('next_review_at')) {
+      context.handle(
+        _nextReviewAtMeta,
+        nextReviewAt.isAcceptableOrUnknown(
+          data['next_review_at']!,
+          _nextReviewAtMeta,
+        ),
+      );
+    }
     if (data.containsKey('times_reviewed')) {
       context.handle(
         _timesReviewedMeta,
         timesReviewed.isAcceptableOrUnknown(
           data['times_reviewed']!,
           _timesReviewedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('consecutive_correct')) {
+      context.handle(
+        _consecutiveCorrectMeta,
+        consecutiveCorrect.isAcceptableOrUnknown(
+          data['consecutive_correct']!,
+          _consecutiveCorrectMeta,
         ),
       );
     }
@@ -1353,9 +1489,17 @@ class $FlashcardsTable extends Flashcards
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_reviewed_at'],
       ),
+      nextReviewAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}next_review_at'],
+      ),
       timesReviewed: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}times_reviewed'],
+      )!,
+      consecutiveCorrect: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}consecutive_correct'],
       )!,
     );
   }
@@ -1373,7 +1517,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
   final String back;
   final DateTime createdAt;
   final DateTime? lastReviewedAt;
+  final DateTime? nextReviewAt;
   final int timesReviewed;
+  final int consecutiveCorrect;
   const Flashcard({
     required this.id,
     required this.deckId,
@@ -1381,7 +1527,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
     required this.back,
     required this.createdAt,
     this.lastReviewedAt,
+    this.nextReviewAt,
     required this.timesReviewed,
+    required this.consecutiveCorrect,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1394,7 +1542,11 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
     if (!nullToAbsent || lastReviewedAt != null) {
       map['last_reviewed_at'] = Variable<DateTime>(lastReviewedAt);
     }
+    if (!nullToAbsent || nextReviewAt != null) {
+      map['next_review_at'] = Variable<DateTime>(nextReviewAt);
+    }
     map['times_reviewed'] = Variable<int>(timesReviewed);
+    map['consecutive_correct'] = Variable<int>(consecutiveCorrect);
     return map;
   }
 
@@ -1408,7 +1560,11 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
       lastReviewedAt: lastReviewedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReviewedAt),
+      nextReviewAt: nextReviewAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nextReviewAt),
       timesReviewed: Value(timesReviewed),
+      consecutiveCorrect: Value(consecutiveCorrect),
     );
   }
 
@@ -1424,7 +1580,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
       back: serializer.fromJson<String>(json['back']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       lastReviewedAt: serializer.fromJson<DateTime?>(json['lastReviewedAt']),
+      nextReviewAt: serializer.fromJson<DateTime?>(json['nextReviewAt']),
       timesReviewed: serializer.fromJson<int>(json['timesReviewed']),
+      consecutiveCorrect: serializer.fromJson<int>(json['consecutiveCorrect']),
     );
   }
   @override
@@ -1437,7 +1595,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
       'back': serializer.toJson<String>(back),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'lastReviewedAt': serializer.toJson<DateTime?>(lastReviewedAt),
+      'nextReviewAt': serializer.toJson<DateTime?>(nextReviewAt),
       'timesReviewed': serializer.toJson<int>(timesReviewed),
+      'consecutiveCorrect': serializer.toJson<int>(consecutiveCorrect),
     };
   }
 
@@ -1448,7 +1608,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
     String? back,
     DateTime? createdAt,
     Value<DateTime?> lastReviewedAt = const Value.absent(),
+    Value<DateTime?> nextReviewAt = const Value.absent(),
     int? timesReviewed,
+    int? consecutiveCorrect,
   }) => Flashcard(
     id: id ?? this.id,
     deckId: deckId ?? this.deckId,
@@ -1458,7 +1620,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
     lastReviewedAt: lastReviewedAt.present
         ? lastReviewedAt.value
         : this.lastReviewedAt,
+    nextReviewAt: nextReviewAt.present ? nextReviewAt.value : this.nextReviewAt,
     timesReviewed: timesReviewed ?? this.timesReviewed,
+    consecutiveCorrect: consecutiveCorrect ?? this.consecutiveCorrect,
   );
   Flashcard copyWithCompanion(FlashcardsCompanion data) {
     return Flashcard(
@@ -1470,9 +1634,15 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
       lastReviewedAt: data.lastReviewedAt.present
           ? data.lastReviewedAt.value
           : this.lastReviewedAt,
+      nextReviewAt: data.nextReviewAt.present
+          ? data.nextReviewAt.value
+          : this.nextReviewAt,
       timesReviewed: data.timesReviewed.present
           ? data.timesReviewed.value
           : this.timesReviewed,
+      consecutiveCorrect: data.consecutiveCorrect.present
+          ? data.consecutiveCorrect.value
+          : this.consecutiveCorrect,
     );
   }
 
@@ -1485,7 +1655,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
           ..write('back: $back, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastReviewedAt: $lastReviewedAt, ')
-          ..write('timesReviewed: $timesReviewed')
+          ..write('nextReviewAt: $nextReviewAt, ')
+          ..write('timesReviewed: $timesReviewed, ')
+          ..write('consecutiveCorrect: $consecutiveCorrect')
           ..write(')'))
         .toString();
   }
@@ -1498,7 +1670,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
     back,
     createdAt,
     lastReviewedAt,
+    nextReviewAt,
     timesReviewed,
+    consecutiveCorrect,
   );
   @override
   bool operator ==(Object other) =>
@@ -1510,7 +1684,9 @@ class Flashcard extends DataClass implements Insertable<Flashcard> {
           other.back == this.back &&
           other.createdAt == this.createdAt &&
           other.lastReviewedAt == this.lastReviewedAt &&
-          other.timesReviewed == this.timesReviewed);
+          other.nextReviewAt == this.nextReviewAt &&
+          other.timesReviewed == this.timesReviewed &&
+          other.consecutiveCorrect == this.consecutiveCorrect);
 }
 
 class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
@@ -1520,7 +1696,9 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
   final Value<String> back;
   final Value<DateTime> createdAt;
   final Value<DateTime?> lastReviewedAt;
+  final Value<DateTime?> nextReviewAt;
   final Value<int> timesReviewed;
+  final Value<int> consecutiveCorrect;
   const FlashcardsCompanion({
     this.id = const Value.absent(),
     this.deckId = const Value.absent(),
@@ -1528,7 +1706,9 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
     this.back = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.lastReviewedAt = const Value.absent(),
+    this.nextReviewAt = const Value.absent(),
     this.timesReviewed = const Value.absent(),
+    this.consecutiveCorrect = const Value.absent(),
   });
   FlashcardsCompanion.insert({
     this.id = const Value.absent(),
@@ -1537,7 +1717,9 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
     required String back,
     this.createdAt = const Value.absent(),
     this.lastReviewedAt = const Value.absent(),
+    this.nextReviewAt = const Value.absent(),
     this.timesReviewed = const Value.absent(),
+    this.consecutiveCorrect = const Value.absent(),
   }) : deckId = Value(deckId),
        front = Value(front),
        back = Value(back);
@@ -1548,7 +1730,9 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
     Expression<String>? back,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? lastReviewedAt,
+    Expression<DateTime>? nextReviewAt,
     Expression<int>? timesReviewed,
+    Expression<int>? consecutiveCorrect,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1557,7 +1741,9 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
       if (back != null) 'back': back,
       if (createdAt != null) 'created_at': createdAt,
       if (lastReviewedAt != null) 'last_reviewed_at': lastReviewedAt,
+      if (nextReviewAt != null) 'next_review_at': nextReviewAt,
       if (timesReviewed != null) 'times_reviewed': timesReviewed,
+      if (consecutiveCorrect != null) 'consecutive_correct': consecutiveCorrect,
     });
   }
 
@@ -1568,7 +1754,9 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
     Value<String>? back,
     Value<DateTime>? createdAt,
     Value<DateTime?>? lastReviewedAt,
+    Value<DateTime?>? nextReviewAt,
     Value<int>? timesReviewed,
+    Value<int>? consecutiveCorrect,
   }) {
     return FlashcardsCompanion(
       id: id ?? this.id,
@@ -1577,7 +1765,9 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
       back: back ?? this.back,
       createdAt: createdAt ?? this.createdAt,
       lastReviewedAt: lastReviewedAt ?? this.lastReviewedAt,
+      nextReviewAt: nextReviewAt ?? this.nextReviewAt,
       timesReviewed: timesReviewed ?? this.timesReviewed,
+      consecutiveCorrect: consecutiveCorrect ?? this.consecutiveCorrect,
     );
   }
 
@@ -1602,8 +1792,14 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
     if (lastReviewedAt.present) {
       map['last_reviewed_at'] = Variable<DateTime>(lastReviewedAt.value);
     }
+    if (nextReviewAt.present) {
+      map['next_review_at'] = Variable<DateTime>(nextReviewAt.value);
+    }
     if (timesReviewed.present) {
       map['times_reviewed'] = Variable<int>(timesReviewed.value);
+    }
+    if (consecutiveCorrect.present) {
+      map['consecutive_correct'] = Variable<int>(consecutiveCorrect.value);
     }
     return map;
   }
@@ -1617,7 +1813,368 @@ class FlashcardsCompanion extends UpdateCompanion<Flashcard> {
           ..write('back: $back, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastReviewedAt: $lastReviewedAt, ')
-          ..write('timesReviewed: $timesReviewed')
+          ..write('nextReviewAt: $nextReviewAt, ')
+          ..write('timesReviewed: $timesReviewed, ')
+          ..write('consecutiveCorrect: $consecutiveCorrect')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FlashcardReviewEventsTable extends FlashcardReviewEvents
+    with TableInfo<$FlashcardReviewEventsTable, FlashcardReviewEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FlashcardReviewEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _cardIdMeta = const VerificationMeta('cardId');
+  @override
+  late final GeneratedColumn<int> cardId = GeneratedColumn<int>(
+    'card_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES flashcards (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _subjectIdMeta = const VerificationMeta(
+    'subjectId',
+  );
+  @override
+  late final GeneratedColumn<int> subjectId = GeneratedColumn<int>(
+    'subject_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES flashcard_subjects (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _knownMeta = const VerificationMeta('known');
+  @override
+  late final GeneratedColumn<bool> known = GeneratedColumn<bool>(
+    'known',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("known" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _reviewedAtMeta = const VerificationMeta(
+    'reviewedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> reviewedAt = GeneratedColumn<DateTime>(
+    'reviewed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    cardId,
+    subjectId,
+    known,
+    reviewedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'flashcard_review_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FlashcardReviewEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('card_id')) {
+      context.handle(
+        _cardIdMeta,
+        cardId.isAcceptableOrUnknown(data['card_id']!, _cardIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cardIdMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(
+        _subjectIdMeta,
+        subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('known')) {
+      context.handle(
+        _knownMeta,
+        known.isAcceptableOrUnknown(data['known']!, _knownMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_knownMeta);
+    }
+    if (data.containsKey('reviewed_at')) {
+      context.handle(
+        _reviewedAtMeta,
+        reviewedAt.isAcceptableOrUnknown(data['reviewed_at']!, _reviewedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FlashcardReviewEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FlashcardReviewEvent(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      cardId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}card_id'],
+      )!,
+      subjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}subject_id'],
+      )!,
+      known: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}known'],
+      )!,
+      reviewedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}reviewed_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FlashcardReviewEventsTable createAlias(String alias) {
+    return $FlashcardReviewEventsTable(attachedDatabase, alias);
+  }
+}
+
+class FlashcardReviewEvent extends DataClass
+    implements Insertable<FlashcardReviewEvent> {
+  final int id;
+  final int cardId;
+  final int subjectId;
+  final bool known;
+  final DateTime reviewedAt;
+  const FlashcardReviewEvent({
+    required this.id,
+    required this.cardId,
+    required this.subjectId,
+    required this.known,
+    required this.reviewedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['card_id'] = Variable<int>(cardId);
+    map['subject_id'] = Variable<int>(subjectId);
+    map['known'] = Variable<bool>(known);
+    map['reviewed_at'] = Variable<DateTime>(reviewedAt);
+    return map;
+  }
+
+  FlashcardReviewEventsCompanion toCompanion(bool nullToAbsent) {
+    return FlashcardReviewEventsCompanion(
+      id: Value(id),
+      cardId: Value(cardId),
+      subjectId: Value(subjectId),
+      known: Value(known),
+      reviewedAt: Value(reviewedAt),
+    );
+  }
+
+  factory FlashcardReviewEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FlashcardReviewEvent(
+      id: serializer.fromJson<int>(json['id']),
+      cardId: serializer.fromJson<int>(json['cardId']),
+      subjectId: serializer.fromJson<int>(json['subjectId']),
+      known: serializer.fromJson<bool>(json['known']),
+      reviewedAt: serializer.fromJson<DateTime>(json['reviewedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'cardId': serializer.toJson<int>(cardId),
+      'subjectId': serializer.toJson<int>(subjectId),
+      'known': serializer.toJson<bool>(known),
+      'reviewedAt': serializer.toJson<DateTime>(reviewedAt),
+    };
+  }
+
+  FlashcardReviewEvent copyWith({
+    int? id,
+    int? cardId,
+    int? subjectId,
+    bool? known,
+    DateTime? reviewedAt,
+  }) => FlashcardReviewEvent(
+    id: id ?? this.id,
+    cardId: cardId ?? this.cardId,
+    subjectId: subjectId ?? this.subjectId,
+    known: known ?? this.known,
+    reviewedAt: reviewedAt ?? this.reviewedAt,
+  );
+  FlashcardReviewEvent copyWithCompanion(FlashcardReviewEventsCompanion data) {
+    return FlashcardReviewEvent(
+      id: data.id.present ? data.id.value : this.id,
+      cardId: data.cardId.present ? data.cardId.value : this.cardId,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      known: data.known.present ? data.known.value : this.known,
+      reviewedAt: data.reviewedAt.present
+          ? data.reviewedAt.value
+          : this.reviewedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FlashcardReviewEvent(')
+          ..write('id: $id, ')
+          ..write('cardId: $cardId, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('known: $known, ')
+          ..write('reviewedAt: $reviewedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, cardId, subjectId, known, reviewedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FlashcardReviewEvent &&
+          other.id == this.id &&
+          other.cardId == this.cardId &&
+          other.subjectId == this.subjectId &&
+          other.known == this.known &&
+          other.reviewedAt == this.reviewedAt);
+}
+
+class FlashcardReviewEventsCompanion
+    extends UpdateCompanion<FlashcardReviewEvent> {
+  final Value<int> id;
+  final Value<int> cardId;
+  final Value<int> subjectId;
+  final Value<bool> known;
+  final Value<DateTime> reviewedAt;
+  const FlashcardReviewEventsCompanion({
+    this.id = const Value.absent(),
+    this.cardId = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.known = const Value.absent(),
+    this.reviewedAt = const Value.absent(),
+  });
+  FlashcardReviewEventsCompanion.insert({
+    this.id = const Value.absent(),
+    required int cardId,
+    required int subjectId,
+    required bool known,
+    this.reviewedAt = const Value.absent(),
+  }) : cardId = Value(cardId),
+       subjectId = Value(subjectId),
+       known = Value(known);
+  static Insertable<FlashcardReviewEvent> custom({
+    Expression<int>? id,
+    Expression<int>? cardId,
+    Expression<int>? subjectId,
+    Expression<bool>? known,
+    Expression<DateTime>? reviewedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (cardId != null) 'card_id': cardId,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (known != null) 'known': known,
+      if (reviewedAt != null) 'reviewed_at': reviewedAt,
+    });
+  }
+
+  FlashcardReviewEventsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? cardId,
+    Value<int>? subjectId,
+    Value<bool>? known,
+    Value<DateTime>? reviewedAt,
+  }) {
+    return FlashcardReviewEventsCompanion(
+      id: id ?? this.id,
+      cardId: cardId ?? this.cardId,
+      subjectId: subjectId ?? this.subjectId,
+      known: known ?? this.known,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (cardId.present) {
+      map['card_id'] = Variable<int>(cardId.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<int>(subjectId.value);
+    }
+    if (known.present) {
+      map['known'] = Variable<bool>(known.value);
+    }
+    if (reviewedAt.present) {
+      map['reviewed_at'] = Variable<DateTime>(reviewedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FlashcardReviewEventsCompanion(')
+          ..write('id: $id, ')
+          ..write('cardId: $cardId, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('known: $known, ')
+          ..write('reviewedAt: $reviewedAt')
           ..write(')'))
         .toString();
   }
@@ -1662,6 +2219,47 @@ class $StudySessionsTable extends StudySessions
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _cardsReviewedMeta = const VerificationMeta(
+    'cardsReviewed',
+  );
+  @override
+  late final GeneratedColumn<int> cardsReviewed = GeneratedColumn<int>(
+    'cards_reviewed',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _completedMeta = const VerificationMeta(
+    'completed',
+  );
+  @override
+  late final GeneratedColumn<bool> completed = GeneratedColumn<bool>(
+    'completed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("completed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _subjectIdMeta = const VerificationMeta(
+    'subjectId',
+  );
+  @override
+  late final GeneratedColumn<int> subjectId = GeneratedColumn<int>(
+    'subject_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES flashcard_subjects (id) ON DELETE SET NULL',
+    ),
+  );
   static const VerificationMeta _completedAtMeta = const VerificationMeta(
     'completedAt',
   );
@@ -1679,6 +2277,9 @@ class $StudySessionsTable extends StudySessions
     id,
     type,
     durationSeconds,
+    cardsReviewed,
+    completed,
+    subjectId,
     completedAt,
   ];
   @override
@@ -1706,6 +2307,27 @@ class $StudySessionsTable extends StudySessions
       );
     } else if (isInserting) {
       context.missing(_durationSecondsMeta);
+    }
+    if (data.containsKey('cards_reviewed')) {
+      context.handle(
+        _cardsReviewedMeta,
+        cardsReviewed.isAcceptableOrUnknown(
+          data['cards_reviewed']!,
+          _cardsReviewedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('completed')) {
+      context.handle(
+        _completedMeta,
+        completed.isAcceptableOrUnknown(data['completed']!, _completedMeta),
+      );
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(
+        _subjectIdMeta,
+        subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta),
+      );
     }
     if (data.containsKey('completed_at')) {
       context.handle(
@@ -1739,6 +2361,18 @@ class $StudySessionsTable extends StudySessions
         DriftSqlType.int,
         data['${effectivePrefix}duration_seconds'],
       )!,
+      cardsReviewed: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cards_reviewed'],
+      )!,
+      completed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}completed'],
+      )!,
+      subjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}subject_id'],
+      ),
       completedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}completed_at'],
@@ -1759,11 +2393,17 @@ class StudySession extends DataClass implements Insertable<StudySession> {
   final int id;
   final StudySessionType type;
   final int durationSeconds;
+  final int cardsReviewed;
+  final bool completed;
+  final int? subjectId;
   final DateTime completedAt;
   const StudySession({
     required this.id,
     required this.type,
     required this.durationSeconds,
+    required this.cardsReviewed,
+    required this.completed,
+    this.subjectId,
     required this.completedAt,
   });
   @override
@@ -1776,6 +2416,11 @@ class StudySession extends DataClass implements Insertable<StudySession> {
       );
     }
     map['duration_seconds'] = Variable<int>(durationSeconds);
+    map['cards_reviewed'] = Variable<int>(cardsReviewed);
+    map['completed'] = Variable<bool>(completed);
+    if (!nullToAbsent || subjectId != null) {
+      map['subject_id'] = Variable<int>(subjectId);
+    }
     map['completed_at'] = Variable<DateTime>(completedAt);
     return map;
   }
@@ -1785,6 +2430,11 @@ class StudySession extends DataClass implements Insertable<StudySession> {
       id: Value(id),
       type: Value(type),
       durationSeconds: Value(durationSeconds),
+      cardsReviewed: Value(cardsReviewed),
+      completed: Value(completed),
+      subjectId: subjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subjectId),
       completedAt: Value(completedAt),
     );
   }
@@ -1800,6 +2450,9 @@ class StudySession extends DataClass implements Insertable<StudySession> {
         serializer.fromJson<int>(json['type']),
       ),
       durationSeconds: serializer.fromJson<int>(json['durationSeconds']),
+      cardsReviewed: serializer.fromJson<int>(json['cardsReviewed']),
+      completed: serializer.fromJson<bool>(json['completed']),
+      subjectId: serializer.fromJson<int?>(json['subjectId']),
       completedAt: serializer.fromJson<DateTime>(json['completedAt']),
     );
   }
@@ -1812,6 +2465,9 @@ class StudySession extends DataClass implements Insertable<StudySession> {
         $StudySessionsTable.$convertertype.toJson(type),
       ),
       'durationSeconds': serializer.toJson<int>(durationSeconds),
+      'cardsReviewed': serializer.toJson<int>(cardsReviewed),
+      'completed': serializer.toJson<bool>(completed),
+      'subjectId': serializer.toJson<int?>(subjectId),
       'completedAt': serializer.toJson<DateTime>(completedAt),
     };
   }
@@ -1820,11 +2476,17 @@ class StudySession extends DataClass implements Insertable<StudySession> {
     int? id,
     StudySessionType? type,
     int? durationSeconds,
+    int? cardsReviewed,
+    bool? completed,
+    Value<int?> subjectId = const Value.absent(),
     DateTime? completedAt,
   }) => StudySession(
     id: id ?? this.id,
     type: type ?? this.type,
     durationSeconds: durationSeconds ?? this.durationSeconds,
+    cardsReviewed: cardsReviewed ?? this.cardsReviewed,
+    completed: completed ?? this.completed,
+    subjectId: subjectId.present ? subjectId.value : this.subjectId,
     completedAt: completedAt ?? this.completedAt,
   );
   StudySession copyWithCompanion(StudySessionsCompanion data) {
@@ -1834,6 +2496,11 @@ class StudySession extends DataClass implements Insertable<StudySession> {
       durationSeconds: data.durationSeconds.present
           ? data.durationSeconds.value
           : this.durationSeconds,
+      cardsReviewed: data.cardsReviewed.present
+          ? data.cardsReviewed.value
+          : this.cardsReviewed,
+      completed: data.completed.present ? data.completed.value : this.completed,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
@@ -1846,13 +2513,24 @@ class StudySession extends DataClass implements Insertable<StudySession> {
           ..write('id: $id, ')
           ..write('type: $type, ')
           ..write('durationSeconds: $durationSeconds, ')
+          ..write('cardsReviewed: $cardsReviewed, ')
+          ..write('completed: $completed, ')
+          ..write('subjectId: $subjectId, ')
           ..write('completedAt: $completedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, type, durationSeconds, completedAt);
+  int get hashCode => Object.hash(
+    id,
+    type,
+    durationSeconds,
+    cardsReviewed,
+    completed,
+    subjectId,
+    completedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1860,6 +2538,9 @@ class StudySession extends DataClass implements Insertable<StudySession> {
           other.id == this.id &&
           other.type == this.type &&
           other.durationSeconds == this.durationSeconds &&
+          other.cardsReviewed == this.cardsReviewed &&
+          other.completed == this.completed &&
+          other.subjectId == this.subjectId &&
           other.completedAt == this.completedAt);
 }
 
@@ -1867,17 +2548,26 @@ class StudySessionsCompanion extends UpdateCompanion<StudySession> {
   final Value<int> id;
   final Value<StudySessionType> type;
   final Value<int> durationSeconds;
+  final Value<int> cardsReviewed;
+  final Value<bool> completed;
+  final Value<int?> subjectId;
   final Value<DateTime> completedAt;
   const StudySessionsCompanion({
     this.id = const Value.absent(),
     this.type = const Value.absent(),
     this.durationSeconds = const Value.absent(),
+    this.cardsReviewed = const Value.absent(),
+    this.completed = const Value.absent(),
+    this.subjectId = const Value.absent(),
     this.completedAt = const Value.absent(),
   });
   StudySessionsCompanion.insert({
     this.id = const Value.absent(),
     required StudySessionType type,
     required int durationSeconds,
+    this.cardsReviewed = const Value.absent(),
+    this.completed = const Value.absent(),
+    this.subjectId = const Value.absent(),
     this.completedAt = const Value.absent(),
   }) : type = Value(type),
        durationSeconds = Value(durationSeconds);
@@ -1885,12 +2575,18 @@ class StudySessionsCompanion extends UpdateCompanion<StudySession> {
     Expression<int>? id,
     Expression<int>? type,
     Expression<int>? durationSeconds,
+    Expression<int>? cardsReviewed,
+    Expression<bool>? completed,
+    Expression<int>? subjectId,
     Expression<DateTime>? completedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (type != null) 'type': type,
       if (durationSeconds != null) 'duration_seconds': durationSeconds,
+      if (cardsReviewed != null) 'cards_reviewed': cardsReviewed,
+      if (completed != null) 'completed': completed,
+      if (subjectId != null) 'subject_id': subjectId,
       if (completedAt != null) 'completed_at': completedAt,
     });
   }
@@ -1899,12 +2595,18 @@ class StudySessionsCompanion extends UpdateCompanion<StudySession> {
     Value<int>? id,
     Value<StudySessionType>? type,
     Value<int>? durationSeconds,
+    Value<int>? cardsReviewed,
+    Value<bool>? completed,
+    Value<int?>? subjectId,
     Value<DateTime>? completedAt,
   }) {
     return StudySessionsCompanion(
       id: id ?? this.id,
       type: type ?? this.type,
       durationSeconds: durationSeconds ?? this.durationSeconds,
+      cardsReviewed: cardsReviewed ?? this.cardsReviewed,
+      completed: completed ?? this.completed,
+      subjectId: subjectId ?? this.subjectId,
       completedAt: completedAt ?? this.completedAt,
     );
   }
@@ -1923,6 +2625,15 @@ class StudySessionsCompanion extends UpdateCompanion<StudySession> {
     if (durationSeconds.present) {
       map['duration_seconds'] = Variable<int>(durationSeconds.value);
     }
+    if (cardsReviewed.present) {
+      map['cards_reviewed'] = Variable<int>(cardsReviewed.value);
+    }
+    if (completed.present) {
+      map['completed'] = Variable<bool>(completed.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<int>(subjectId.value);
+    }
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
@@ -1935,6 +2646,9 @@ class StudySessionsCompanion extends UpdateCompanion<StudySession> {
           ..write('id: $id, ')
           ..write('type: $type, ')
           ..write('durationSeconds: $durationSeconds, ')
+          ..write('cardsReviewed: $cardsReviewed, ')
+          ..write('completed: $completed, ')
+          ..write('subjectId: $subjectId, ')
           ..write('completedAt: $completedAt')
           ..write(')'))
         .toString();
@@ -1950,6 +2664,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $FlashcardSubjectsTable(this);
   late final $FlashcardDecksTable flashcardDecks = $FlashcardDecksTable(this);
   late final $FlashcardsTable flashcards = $FlashcardsTable(this);
+  late final $FlashcardReviewEventsTable flashcardReviewEvents =
+      $FlashcardReviewEventsTable(this);
   late final $StudySessionsTable studySessions = $StudySessionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -1961,6 +2677,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     flashcardSubjects,
     flashcardDecks,
     flashcards,
+    flashcardReviewEvents,
     studySessions,
   ];
   @override
@@ -1986,6 +2703,27 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [TableUpdate('flashcards', kind: UpdateKind.delete)],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'flashcards',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('flashcard_review_events', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'flashcard_subjects',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('flashcard_review_events', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'flashcard_subjects',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('study_sessions', kind: UpdateKind.update)],
+    ),
   ]);
 }
 
@@ -1993,12 +2731,14 @@ typedef $$NoteSubjectsTableCreateCompanionBuilder =
     NoteSubjectsCompanion Function({
       Value<int> id,
       required String name,
+      Value<String> colorHex,
       Value<DateTime> createdAt,
     });
 typedef $$NoteSubjectsTableUpdateCompanionBuilder =
     NoteSubjectsCompanion Function({
       Value<int> id,
       Value<String> name,
+      Value<String> colorHex,
       Value<DateTime> createdAt,
     });
 
@@ -2041,6 +2781,11 @@ class $$NoteSubjectsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2094,6 +2839,11 @@ class $$NoteSubjectsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -2114,6 +2864,9 @@ class $$NoteSubjectsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get colorHex =>
+      $composableBuilder(column: $table.colorHex, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -2170,19 +2923,28 @@ class $$NoteSubjectsTableTableManager
               $$NoteSubjectsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
               $$NoteSubjectsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback: ({
-            Value<int> id = const Value.absent(),
-            Value<String> name = const Value.absent(),
-            Value<DateTime> createdAt = const Value.absent(),
-          }) => NoteSubjectsCompanion(id: id, name: name, createdAt: createdAt),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> colorHex = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => NoteSubjectsCompanion(
+                id: id,
+                name: name,
+                colorHex: colorHex,
+                createdAt: createdAt,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
+                Value<String> colorHex = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => NoteSubjectsCompanion.insert(
                 id: id,
                 name: name,
+                colorHex: colorHex,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -2552,12 +3314,14 @@ typedef $$FlashcardSubjectsTableCreateCompanionBuilder =
     FlashcardSubjectsCompanion Function({
       Value<int> id,
       required String name,
+      Value<String> colorHex,
       Value<DateTime> createdAt,
     });
 typedef $$FlashcardSubjectsTableUpdateCompanionBuilder =
     FlashcardSubjectsCompanion Function({
       Value<int> id,
       Value<String> name,
+      Value<String> colorHex,
       Value<DateTime> createdAt,
     });
 
@@ -2591,6 +3355,50 @@ final class $$FlashcardSubjectsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $FlashcardReviewEventsTable,
+    List<FlashcardReviewEvent>
+  >
+  _flashcardReviewEventsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.flashcardReviewEvents,
+        aliasName:
+            'flashcard_subjects__id__flashcard_review_events__subject_id',
+      );
+
+  $$FlashcardReviewEventsTableProcessedTableManager
+  get flashcardReviewEventsRefs {
+    final manager = $$FlashcardReviewEventsTableTableManager(
+      $_db,
+      $_db.flashcardReviewEvents,
+    ).filter((f) => f.subjectId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _flashcardReviewEventsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StudySessionsTable, List<StudySession>>
+  _studySessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.studySessions,
+    aliasName: 'flashcard_subjects__id__study_sessions__subject_id',
+  );
+
+  $$StudySessionsTableProcessedTableManager get studySessionsRefs {
+    final manager = $$StudySessionsTableTableManager(
+      $_db,
+      $_db.studySessions,
+    ).filter((f) => f.subjectId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_studySessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$FlashcardSubjectsTableFilterComposer
@@ -2609,6 +3417,11 @@ class $$FlashcardSubjectsTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2641,6 +3454,57 @@ class $$FlashcardSubjectsTableFilterComposer
     );
     return f(composer);
   }
+
+  Expression<bool> flashcardReviewEventsRefs(
+    Expression<bool> Function($$FlashcardReviewEventsTableFilterComposer f) f,
+  ) {
+    final $$FlashcardReviewEventsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.flashcardReviewEvents,
+          getReferencedColumn: (t) => t.subjectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$FlashcardReviewEventsTableFilterComposer(
+                $db: $db,
+                $table: $db.flashcardReviewEvents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> studySessionsRefs(
+    Expression<bool> Function($$StudySessionsTableFilterComposer f) f,
+  ) {
+    final $$StudySessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.studySessions,
+      getReferencedColumn: (t) => t.subjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudySessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.studySessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$FlashcardSubjectsTableOrderingComposer
@@ -2659,6 +3523,11 @@ class $$FlashcardSubjectsTableOrderingComposer
 
   ColumnOrderings<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -2682,6 +3551,9 @@ class $$FlashcardSubjectsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get colorHex =>
+      $composableBuilder(column: $table.colorHex, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -2710,6 +3582,57 @@ class $$FlashcardSubjectsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> flashcardReviewEventsRefs<T extends Object>(
+    Expression<T> Function($$FlashcardReviewEventsTableAnnotationComposer a) f,
+  ) {
+    final $$FlashcardReviewEventsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.flashcardReviewEvents,
+          getReferencedColumn: (t) => t.subjectId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$FlashcardReviewEventsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.flashcardReviewEvents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> studySessionsRefs<T extends Object>(
+    Expression<T> Function($$StudySessionsTableAnnotationComposer a) f,
+  ) {
+    final $$StudySessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.studySessions,
+      getReferencedColumn: (t) => t.subjectId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudySessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.studySessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$FlashcardSubjectsTableTableManager
@@ -2725,7 +3648,11 @@ class $$FlashcardSubjectsTableTableManager
           $$FlashcardSubjectsTableUpdateCompanionBuilder,
           (FlashcardSubject, $$FlashcardSubjectsTableReferences),
           FlashcardSubject,
-          PrefetchHooks Function({bool flashcardDecksRefs})
+          PrefetchHooks Function({
+            bool flashcardDecksRefs,
+            bool flashcardReviewEventsRefs,
+            bool studySessionsRefs,
+          })
         > {
   $$FlashcardSubjectsTableTableManager(
     _$AppDatabase db,
@@ -2747,20 +3674,24 @@ class $$FlashcardSubjectsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String> colorHex = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => FlashcardSubjectsCompanion(
                 id: id,
                 name: name,
+                colorHex: colorHex,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
+                Value<String> colorHex = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => FlashcardSubjectsCompanion.insert(
                 id: id,
                 name: name,
+                colorHex: colorHex,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -2771,38 +3702,89 @@ class $$FlashcardSubjectsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({flashcardDecksRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (flashcardDecksRefs) db.flashcardDecks,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (flashcardDecksRefs)
-                    await $_getPrefetchedData<
-                      FlashcardSubject,
-                      $FlashcardSubjectsTable,
-                      FlashcardDeck
-                    >(
-                      currentTable: table,
-                      referencedTable: $$FlashcardSubjectsTableReferences
-                          ._flashcardDecksRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$FlashcardSubjectsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).flashcardDecksRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.subjectId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({
+                flashcardDecksRefs = false,
+                flashcardReviewEventsRefs = false,
+                studySessionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (flashcardDecksRefs) db.flashcardDecks,
+                    if (flashcardReviewEventsRefs) db.flashcardReviewEvents,
+                    if (studySessionsRefs) db.studySessions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (flashcardDecksRefs)
+                        await $_getPrefetchedData<
+                          FlashcardSubject,
+                          $FlashcardSubjectsTable,
+                          FlashcardDeck
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FlashcardSubjectsTableReferences
+                              ._flashcardDecksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FlashcardSubjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).flashcardDecksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.subjectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (flashcardReviewEventsRefs)
+                        await $_getPrefetchedData<
+                          FlashcardSubject,
+                          $FlashcardSubjectsTable,
+                          FlashcardReviewEvent
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FlashcardSubjectsTableReferences
+                              ._flashcardReviewEventsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FlashcardSubjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).flashcardReviewEventsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.subjectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (studySessionsRefs)
+                        await $_getPrefetchedData<
+                          FlashcardSubject,
+                          $FlashcardSubjectsTable,
+                          StudySession
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FlashcardSubjectsTableReferences
+                              ._studySessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FlashcardSubjectsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).studySessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.subjectId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -2819,7 +3801,11 @@ typedef $$FlashcardSubjectsTableProcessedTableManager =
       $$FlashcardSubjectsTableUpdateCompanionBuilder,
       (FlashcardSubject, $$FlashcardSubjectsTableReferences),
       FlashcardSubject,
-      PrefetchHooks Function({bool flashcardDecksRefs})
+      PrefetchHooks Function({
+        bool flashcardDecksRefs,
+        bool flashcardReviewEventsRefs,
+        bool studySessionsRefs,
+      })
     >;
 typedef $$FlashcardDecksTableCreateCompanionBuilder =
     FlashcardDecksCompanion Function({
@@ -3214,7 +4200,9 @@ typedef $$FlashcardsTableCreateCompanionBuilder = FlashcardsCompanion Function({
   required String back,
   Value<DateTime> createdAt,
   Value<DateTime?> lastReviewedAt,
+  Value<DateTime?> nextReviewAt,
   Value<int> timesReviewed,
+  Value<int> consecutiveCorrect,
 });
 typedef $$FlashcardsTableUpdateCompanionBuilder = FlashcardsCompanion Function({
   Value<int> id,
@@ -3223,7 +4211,9 @@ typedef $$FlashcardsTableUpdateCompanionBuilder = FlashcardsCompanion Function({
   Value<String> back,
   Value<DateTime> createdAt,
   Value<DateTime?> lastReviewedAt,
+  Value<DateTime?> nextReviewAt,
   Value<int> timesReviewed,
+  Value<int> consecutiveCorrect,
 });
 
 final class $$FlashcardsTableReferences
@@ -3244,6 +4234,31 @@ final class $$FlashcardsTableReferences
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $FlashcardReviewEventsTable,
+    List<FlashcardReviewEvent>
+  >
+  _flashcardReviewEventsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.flashcardReviewEvents,
+        aliasName: 'flashcards__id__flashcard_review_events__card_id',
+      );
+
+  $$FlashcardReviewEventsTableProcessedTableManager
+  get flashcardReviewEventsRefs {
+    final manager = $$FlashcardReviewEventsTableTableManager(
+      $_db,
+      $_db.flashcardReviewEvents,
+    ).filter((f) => f.cardId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _flashcardReviewEventsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
     );
   }
 }
@@ -3282,8 +4297,18 @@ class $$FlashcardsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<DateTime> get nextReviewAt => $composableBuilder(
+    column: $table.nextReviewAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get timesReviewed => $composableBuilder(
     column: $table.timesReviewed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get consecutiveCorrect => $composableBuilder(
+    column: $table.consecutiveCorrect,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3308,6 +4333,32 @@ class $$FlashcardsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> flashcardReviewEventsRefs(
+    Expression<bool> Function($$FlashcardReviewEventsTableFilterComposer f) f,
+  ) {
+    final $$FlashcardReviewEventsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.flashcardReviewEvents,
+          getReferencedColumn: (t) => t.cardId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$FlashcardReviewEventsTableFilterComposer(
+                $db: $db,
+                $table: $db.flashcardReviewEvents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
   }
 }
 
@@ -3345,8 +4396,18 @@ class $$FlashcardsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get nextReviewAt => $composableBuilder(
+    column: $table.nextReviewAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get timesReviewed => $composableBuilder(
     column: $table.timesReviewed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get consecutiveCorrect => $composableBuilder(
+    column: $table.consecutiveCorrect,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3400,8 +4461,18 @@ class $$FlashcardsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get nextReviewAt => $composableBuilder(
+    column: $table.nextReviewAt,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get timesReviewed => $composableBuilder(
     column: $table.timesReviewed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get consecutiveCorrect => $composableBuilder(
+    column: $table.consecutiveCorrect,
     builder: (column) => column,
   );
 
@@ -3427,6 +4498,32 @@ class $$FlashcardsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> flashcardReviewEventsRefs<T extends Object>(
+    Expression<T> Function($$FlashcardReviewEventsTableAnnotationComposer a) f,
+  ) {
+    final $$FlashcardReviewEventsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.flashcardReviewEvents,
+          getReferencedColumn: (t) => t.cardId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$FlashcardReviewEventsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.flashcardReviewEvents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$FlashcardsTableTableManager
@@ -3442,7 +4539,7 @@ class $$FlashcardsTableTableManager
           $$FlashcardsTableUpdateCompanionBuilder,
           (Flashcard, $$FlashcardsTableReferences),
           Flashcard,
-          PrefetchHooks Function({bool deckId})
+          PrefetchHooks Function({bool deckId, bool flashcardReviewEventsRefs})
         > {
   $$FlashcardsTableTableManager(_$AppDatabase db, $FlashcardsTable table)
     : super(
@@ -3463,7 +4560,9 @@ class $$FlashcardsTableTableManager
                 Value<String> back = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> lastReviewedAt = const Value.absent(),
+                Value<DateTime?> nextReviewAt = const Value.absent(),
                 Value<int> timesReviewed = const Value.absent(),
+                Value<int> consecutiveCorrect = const Value.absent(),
               }) => FlashcardsCompanion(
                 id: id,
                 deckId: deckId,
@@ -3471,7 +4570,9 @@ class $$FlashcardsTableTableManager
                 back: back,
                 createdAt: createdAt,
                 lastReviewedAt: lastReviewedAt,
+                nextReviewAt: nextReviewAt,
                 timesReviewed: timesReviewed,
+                consecutiveCorrect: consecutiveCorrect,
               ),
           createCompanionCallback:
               ({
@@ -3481,7 +4582,9 @@ class $$FlashcardsTableTableManager
                 required String back,
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> lastReviewedAt = const Value.absent(),
+                Value<DateTime?> nextReviewAt = const Value.absent(),
                 Value<int> timesReviewed = const Value.absent(),
+                Value<int> consecutiveCorrect = const Value.absent(),
               }) => FlashcardsCompanion.insert(
                 id: id,
                 deckId: deckId,
@@ -3489,7 +4592,9 @@ class $$FlashcardsTableTableManager
                 back: back,
                 createdAt: createdAt,
                 lastReviewedAt: lastReviewedAt,
+                nextReviewAt: nextReviewAt,
                 timesReviewed: timesReviewed,
+                consecutiveCorrect: consecutiveCorrect,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3499,7 +4604,442 @@ class $$FlashcardsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({deckId = false}) {
+          prefetchHooksCallback:
+              ({deckId = false, flashcardReviewEventsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (flashcardReviewEventsRefs) db.flashcardReviewEvents,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (deckId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.deckId,
+                            referencedTable: $$FlashcardsTableReferences
+                                ._deckIdTable(db),
+                            referencedColumn: $$FlashcardsTableReferences
+                                ._deckIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (flashcardReviewEventsRefs)
+                        await $_getPrefetchedData<
+                          Flashcard,
+                          $FlashcardsTable,
+                          FlashcardReviewEvent
+                        >(
+                          currentTable: table,
+                          referencedTable: $$FlashcardsTableReferences
+                              ._flashcardReviewEventsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FlashcardsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).flashcardReviewEventsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.cardId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$FlashcardsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FlashcardsTable,
+      Flashcard,
+      $$FlashcardsTableFilterComposer,
+      $$FlashcardsTableOrderingComposer,
+      $$FlashcardsTableAnnotationComposer,
+      $$FlashcardsTableCreateCompanionBuilder,
+      $$FlashcardsTableUpdateCompanionBuilder,
+      (Flashcard, $$FlashcardsTableReferences),
+      Flashcard,
+      PrefetchHooks Function({bool deckId, bool flashcardReviewEventsRefs})
+    >;
+typedef $$FlashcardReviewEventsTableCreateCompanionBuilder =
+    FlashcardReviewEventsCompanion Function({
+      Value<int> id,
+      required int cardId,
+      required int subjectId,
+      required bool known,
+      Value<DateTime> reviewedAt,
+    });
+typedef $$FlashcardReviewEventsTableUpdateCompanionBuilder =
+    FlashcardReviewEventsCompanion Function({
+      Value<int> id,
+      Value<int> cardId,
+      Value<int> subjectId,
+      Value<bool> known,
+      Value<DateTime> reviewedAt,
+    });
+
+final class $$FlashcardReviewEventsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $FlashcardReviewEventsTable,
+          FlashcardReviewEvent
+        > {
+  $$FlashcardReviewEventsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $FlashcardsTable _cardIdTable(_$AppDatabase db) => db.flashcards
+      .createAlias('flashcard_review_events__card_id__flashcards__id');
+
+  $$FlashcardsTableProcessedTableManager get cardId {
+    final $_column = $_itemColumn<int>('card_id')!;
+
+    final manager = $$FlashcardsTableTableManager(
+      $_db,
+      $_db.flashcards,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_cardIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $FlashcardSubjectsTable _subjectIdTable(_$AppDatabase db) =>
+      db.flashcardSubjects.createAlias(
+        'flashcard_review_events__subject_id__flashcard_subjects__id',
+      );
+
+  $$FlashcardSubjectsTableProcessedTableManager get subjectId {
+    final $_column = $_itemColumn<int>('subject_id')!;
+
+    final manager = $$FlashcardSubjectsTableTableManager(
+      $_db,
+      $_db.flashcardSubjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_subjectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$FlashcardReviewEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $FlashcardReviewEventsTable> {
+  $$FlashcardReviewEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get known => $composableBuilder(
+    column: $table.known,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$FlashcardsTableFilterComposer get cardId {
+    final $$FlashcardsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.cardId,
+      referencedTable: $db.flashcards,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FlashcardsTableFilterComposer(
+            $db: $db,
+            $table: $db.flashcards,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FlashcardSubjectsTableFilterComposer get subjectId {
+    final $$FlashcardSubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.flashcardSubjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FlashcardSubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.flashcardSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FlashcardReviewEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FlashcardReviewEventsTable> {
+  $$FlashcardReviewEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get known => $composableBuilder(
+    column: $table.known,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$FlashcardsTableOrderingComposer get cardId {
+    final $$FlashcardsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.cardId,
+      referencedTable: $db.flashcards,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FlashcardsTableOrderingComposer(
+            $db: $db,
+            $table: $db.flashcards,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FlashcardSubjectsTableOrderingComposer get subjectId {
+    final $$FlashcardSubjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.flashcardSubjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FlashcardSubjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.flashcardSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FlashcardReviewEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FlashcardReviewEventsTable> {
+  $$FlashcardReviewEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get known =>
+      $composableBuilder(column: $table.known, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get reviewedAt => $composableBuilder(
+    column: $table.reviewedAt,
+    builder: (column) => column,
+  );
+
+  $$FlashcardsTableAnnotationComposer get cardId {
+    final $$FlashcardsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.cardId,
+      referencedTable: $db.flashcards,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FlashcardsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.flashcards,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$FlashcardSubjectsTableAnnotationComposer get subjectId {
+    final $$FlashcardSubjectsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.subjectId,
+          referencedTable: $db.flashcardSubjects,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$FlashcardSubjectsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.flashcardSubjects,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$FlashcardReviewEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FlashcardReviewEventsTable,
+          FlashcardReviewEvent,
+          $$FlashcardReviewEventsTableFilterComposer,
+          $$FlashcardReviewEventsTableOrderingComposer,
+          $$FlashcardReviewEventsTableAnnotationComposer,
+          $$FlashcardReviewEventsTableCreateCompanionBuilder,
+          $$FlashcardReviewEventsTableUpdateCompanionBuilder,
+          (FlashcardReviewEvent, $$FlashcardReviewEventsTableReferences),
+          FlashcardReviewEvent,
+          PrefetchHooks Function({bool cardId, bool subjectId})
+        > {
+  $$FlashcardReviewEventsTableTableManager(
+    _$AppDatabase db,
+    $FlashcardReviewEventsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FlashcardReviewEventsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$FlashcardReviewEventsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$FlashcardReviewEventsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> cardId = const Value.absent(),
+                Value<int> subjectId = const Value.absent(),
+                Value<bool> known = const Value.absent(),
+                Value<DateTime> reviewedAt = const Value.absent(),
+              }) => FlashcardReviewEventsCompanion(
+                id: id,
+                cardId: cardId,
+                subjectId: subjectId,
+                known: known,
+                reviewedAt: reviewedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int cardId,
+                required int subjectId,
+                required bool known,
+                Value<DateTime> reviewedAt = const Value.absent(),
+              }) => FlashcardReviewEventsCompanion.insert(
+                id: id,
+                cardId: cardId,
+                subjectId: subjectId,
+                known: known,
+                reviewedAt: reviewedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $FlashcardReviewEventsTable,
+                    FlashcardReviewEvent
+                  >(table),
+                  $$FlashcardReviewEventsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({cardId = false, subjectId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -3519,14 +5059,25 @@ class $$FlashcardsTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (deckId) {
+                    if (cardId) {
                       state = state.withJoin(
                         currentTable: table,
-                        currentColumn: table.deckId,
-                        referencedTable: $$FlashcardsTableReferences
-                            ._deckIdTable(db),
-                        referencedColumn: $$FlashcardsTableReferences
-                            ._deckIdTable(db)
+                        currentColumn: table.cardId,
+                        referencedTable: $$FlashcardReviewEventsTableReferences
+                            ._cardIdTable(db),
+                        referencedColumn: $$FlashcardReviewEventsTableReferences
+                            ._cardIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (subjectId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.subjectId,
+                        referencedTable: $$FlashcardReviewEventsTableReferences
+                            ._subjectIdTable(db),
+                        referencedColumn: $$FlashcardReviewEventsTableReferences
+                            ._subjectIdTable(db)
                             .id,
                       ) as T;
                     }
@@ -3542,25 +5093,28 @@ class $$FlashcardsTableTableManager
       );
 }
 
-typedef $$FlashcardsTableProcessedTableManager =
+typedef $$FlashcardReviewEventsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $FlashcardsTable,
-      Flashcard,
-      $$FlashcardsTableFilterComposer,
-      $$FlashcardsTableOrderingComposer,
-      $$FlashcardsTableAnnotationComposer,
-      $$FlashcardsTableCreateCompanionBuilder,
-      $$FlashcardsTableUpdateCompanionBuilder,
-      (Flashcard, $$FlashcardsTableReferences),
-      Flashcard,
-      PrefetchHooks Function({bool deckId})
+      $FlashcardReviewEventsTable,
+      FlashcardReviewEvent,
+      $$FlashcardReviewEventsTableFilterComposer,
+      $$FlashcardReviewEventsTableOrderingComposer,
+      $$FlashcardReviewEventsTableAnnotationComposer,
+      $$FlashcardReviewEventsTableCreateCompanionBuilder,
+      $$FlashcardReviewEventsTableUpdateCompanionBuilder,
+      (FlashcardReviewEvent, $$FlashcardReviewEventsTableReferences),
+      FlashcardReviewEvent,
+      PrefetchHooks Function({bool cardId, bool subjectId})
     >;
 typedef $$StudySessionsTableCreateCompanionBuilder =
     StudySessionsCompanion Function({
       Value<int> id,
       required StudySessionType type,
       required int durationSeconds,
+      Value<int> cardsReviewed,
+      Value<bool> completed,
+      Value<int?> subjectId,
       Value<DateTime> completedAt,
     });
 typedef $$StudySessionsTableUpdateCompanionBuilder =
@@ -3568,8 +5122,38 @@ typedef $$StudySessionsTableUpdateCompanionBuilder =
       Value<int> id,
       Value<StudySessionType> type,
       Value<int> durationSeconds,
+      Value<int> cardsReviewed,
+      Value<bool> completed,
+      Value<int?> subjectId,
       Value<DateTime> completedAt,
     });
+
+final class $$StudySessionsTableReferences
+    extends BaseReferences<_$AppDatabase, $StudySessionsTable, StudySession> {
+  $$StudySessionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $FlashcardSubjectsTable _subjectIdTable(_$AppDatabase db) => db
+      .flashcardSubjects
+      .createAlias('study_sessions__subject_id__flashcard_subjects__id');
+
+  $$FlashcardSubjectsTableProcessedTableManager? get subjectId {
+    final $_column = $_itemColumn<int>('subject_id');
+    if ($_column == null) return null;
+    final manager = $$FlashcardSubjectsTableTableManager(
+      $_db,
+      $_db.flashcardSubjects,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_subjectIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
 
 class $$StudySessionsTableFilterComposer
     extends Composer<_$AppDatabase, $StudySessionsTable> {
@@ -3596,10 +5180,43 @@ class $$StudySessionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get cardsReviewed => $composableBuilder(
+    column: $table.cardsReviewed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get completed => $composableBuilder(
+    column: $table.completed,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$FlashcardSubjectsTableFilterComposer get subjectId {
+    final $$FlashcardSubjectsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.flashcardSubjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FlashcardSubjectsTableFilterComposer(
+            $db: $db,
+            $table: $db.flashcardSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$StudySessionsTableOrderingComposer
@@ -3626,10 +5243,43 @@ class $$StudySessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cardsReviewed => $composableBuilder(
+    column: $table.cardsReviewed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get completed => $composableBuilder(
+    column: $table.completed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$FlashcardSubjectsTableOrderingComposer get subjectId {
+    final $$FlashcardSubjectsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.subjectId,
+      referencedTable: $db.flashcardSubjects,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FlashcardSubjectsTableOrderingComposer(
+            $db: $db,
+            $table: $db.flashcardSubjects,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$StudySessionsTableAnnotationComposer
@@ -3652,10 +5302,42 @@ class $$StudySessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get cardsReviewed => $composableBuilder(
+    column: $table.cardsReviewed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get completed =>
+      $composableBuilder(column: $table.completed, builder: (column) => column);
+
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
     column: $table.completedAt,
     builder: (column) => column,
   );
+
+  $$FlashcardSubjectsTableAnnotationComposer get subjectId {
+    final $$FlashcardSubjectsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.subjectId,
+          referencedTable: $db.flashcardSubjects,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$FlashcardSubjectsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.flashcardSubjects,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
 }
 
 class $$StudySessionsTableTableManager
@@ -3669,12 +5351,9 @@ class $$StudySessionsTableTableManager
           $$StudySessionsTableAnnotationComposer,
           $$StudySessionsTableCreateCompanionBuilder,
           $$StudySessionsTableUpdateCompanionBuilder,
-          (
-            StudySession,
-            BaseReferences<_$AppDatabase, $StudySessionsTable, StudySession>,
-          ),
+          (StudySession, $$StudySessionsTableReferences),
           StudySession,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool subjectId})
         > {
   $$StudySessionsTableTableManager(_$AppDatabase db, $StudySessionsTable table)
     : super(
@@ -3692,11 +5371,17 @@ class $$StudySessionsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<StudySessionType> type = const Value.absent(),
                 Value<int> durationSeconds = const Value.absent(),
+                Value<int> cardsReviewed = const Value.absent(),
+                Value<bool> completed = const Value.absent(),
+                Value<int?> subjectId = const Value.absent(),
                 Value<DateTime> completedAt = const Value.absent(),
               }) => StudySessionsCompanion(
                 id: id,
                 type: type,
                 durationSeconds: durationSeconds,
+                cardsReviewed: cardsReviewed,
+                completed: completed,
+                subjectId: subjectId,
                 completedAt: completedAt,
               ),
           createCompanionCallback:
@@ -3704,26 +5389,66 @@ class $$StudySessionsTableTableManager
                 Value<int> id = const Value.absent(),
                 required StudySessionType type,
                 required int durationSeconds,
+                Value<int> cardsReviewed = const Value.absent(),
+                Value<bool> completed = const Value.absent(),
+                Value<int?> subjectId = const Value.absent(),
                 Value<DateTime> completedAt = const Value.absent(),
               }) => StudySessionsCompanion.insert(
                 id: id,
                 type: type,
                 durationSeconds: durationSeconds,
+                cardsReviewed: cardsReviewed,
+                completed: completed,
+                subjectId: subjectId,
                 completedAt: completedAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable<$StudySessionsTable, StudySession>(table),
-                  BaseReferences<
-                    _$AppDatabase,
-                    $StudySessionsTable,
-                    StudySession
-                  >(db, table, e),
+                  $$StudySessionsTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({subjectId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (subjectId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.subjectId,
+                        referencedTable: $$StudySessionsTableReferences
+                            ._subjectIdTable(db),
+                        referencedColumn: $$StudySessionsTableReferences
+                            ._subjectIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -3738,12 +5463,9 @@ typedef $$StudySessionsTableProcessedTableManager =
       $$StudySessionsTableAnnotationComposer,
       $$StudySessionsTableCreateCompanionBuilder,
       $$StudySessionsTableUpdateCompanionBuilder,
-      (
-        StudySession,
-        BaseReferences<_$AppDatabase, $StudySessionsTable, StudySession>,
-      ),
+      (StudySession, $$StudySessionsTableReferences),
       StudySession,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool subjectId})
     >;
 
 class $AppDatabaseManager {
@@ -3759,6 +5481,8 @@ class $AppDatabaseManager {
       $$FlashcardDecksTableTableManager(_db, _db.flashcardDecks);
   $$FlashcardsTableTableManager get flashcards =>
       $$FlashcardsTableTableManager(_db, _db.flashcards);
+  $$FlashcardReviewEventsTableTableManager get flashcardReviewEvents =>
+      $$FlashcardReviewEventsTableTableManager(_db, _db.flashcardReviewEvents);
   $$StudySessionsTableTableManager get studySessions =>
       $$StudySessionsTableTableManager(_db, _db.studySessions);
 }

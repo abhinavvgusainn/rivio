@@ -1,109 +1,151 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../database/database.dart';
 
-/// Turns raw [StudySession] rows into the numbers/shapes the Home
-/// dashboard needs. Keeping this logic out of the widgets means the
-/// widgets can be handed mock data while the DB-backed version of
-/// this service is still being wired up.
-class StatisticsService {
-  const StatisticsService(this._database);
+class DailyStudyActivity {
+  const DailyStudyActivity({
+    this.timerMinutes = 0,
+    this.reviewMinutes = 0,
+    this.cardsReviewed = 0,
+  });
 
-  final AppDatabase _database;
+  final int timerMinutes;
+  final int reviewMinutes;
+  final int cardsReviewed;
 
-  Stream<HomeStatistics> watchStatistics() {
-    return _database.watchAllSessions().map(_computeStatistics);
-  }
-
-  HomeStatistics _computeStatistics(List<StudySession> sessions) {
-    final totalSeconds =
-        sessions.fold<int>(0, (sum, s) => sum + s.durationSeconds);
-
-    final pomodoroCount = sessions
-        .where((s) => s.type == StudySessionType.pomodoro)
-        .length;
-
-    final flashcardSessionCount = sessions
-        .where((s) => s.type == StudySessionType.flashcardReview)
-        .length;
-
-    final studyDays = sessions
-        .map((s) => DateUtils.dateOnly(s.completedAt))
-        .toSet();
-
-    return HomeStatistics(
-      currentStreakDays: _computeStreak(studyDays),
-      totalStudySeconds: totalSeconds,
-      pomodoroSessions: pomodoroCount,
-      flashcardReviewSessions: flashcardSessionCount,
-      studyDays: studyDays.length,
-      activityByDay: _bucketByDay(sessions),
-    );
-  }
-
-  int _computeStreak(Set<DateTime> studyDays) {
-    var streak = 0;
-    var cursor = DateUtils.dateOnly(DateTime.now());
-
-    // A day with no session yet (today, before you've studied)
-    // doesn't break a streak that's still running from yesterday.
-    if (!studyDays.contains(cursor)) {
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-
-    while (studyDays.contains(cursor)) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    return streak;
-  }
-
-  /// Minutes studied per calendar day, keyed by 'yyyy-MM-dd', for the
-  /// activity heatmap.
-  Map<String, int> _bucketByDay(List<StudySession> sessions) {
-    final formatter = DateFormat('yyyy-MM-dd');
-    final buckets = <String, int>{};
-    for (final s in sessions) {
-      final key = formatter.format(s.completedAt);
-      buckets[key] = (buckets[key] ?? 0) + (s.durationSeconds ~/ 60);
-    }
-    return buckets;
-  }
+  int get effort => timerMinutes + reviewMinutes + cardsReviewed;
 }
 
 class HomeStatistics {
   const HomeStatistics({
-    required this.currentStreakDays,
     required this.totalStudySeconds,
-    required this.pomodoroSessions,
-    required this.flashcardReviewSessions,
+    required this.totalFocusSeconds,
+    required this.todayFocusSeconds,
+    required this.focusSessions,
+    required this.reviewRounds,
     required this.studyDays,
-    required this.activityByDay,
+    required this.currentStreak,
+    required this.activity,
   });
 
-  final int currentStreakDays;
   final int totalStudySeconds;
-  final int pomodoroSessions;
-  final int flashcardReviewSessions;
+  final int totalFocusSeconds;
+  final int todayFocusSeconds;
+  final int focusSessions;
+  final int reviewRounds;
   final int studyDays;
+  final int currentStreak;
+  final Map<String, DailyStudyActivity> activity;
 
-  /// 'yyyy-MM-dd' -> minutes studied that day.
-  final Map<String, int> activityByDay;
+  String get totalStudyLabel {
+    final minutes = totalStudySeconds ~/ 60;
+    if (totalStudySeconds > 0 && minutes == 0) return '<1m';
+    final hours = minutes ~/ 60;
+    final remainingMinutes = minutes % 60;
+    return hours == 0
+        ? '${remainingMinutes}m'
+        : '${hours}h ${remainingMinutes}m';
+  }
 
-  static const empty = HomeStatistics(
-    currentStreakDays: 0,
-    totalStudySeconds: 0,
-    pomodoroSessions: 0,
-    flashcardReviewSessions: 0,
-    studyDays: 0,
-    activityByDay: {},
-  );
+  String get totalFocusLabel => _durationLabel(totalFocusSeconds);
 
-  String get totalStudyTimeLabel {
-    final hours = totalStudySeconds ~/ 3600;
-    final minutes = (totalStudySeconds % 3600) ~/ 60;
-    if (hours == 0) return '${minutes}m';
-    return '${hours}h ${minutes}m';
+  int get effortLastFiveWeeks {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final currentWeekStart = today.subtract(Duration(days: today.weekday - 1));
+    final firstDay = _dayKey(
+      currentWeekStart.subtract(const Duration(days: 28)),
+    );
+    return activity.entries
+        .where((entry) => entry.key.compareTo(firstDay) >= 0)
+        .fold<int>(0, (sum, entry) => sum + entry.value.effort);
+  }
+
+  static String _durationLabel(int seconds) {
+    final minutes = seconds ~/ 60;
+    if (seconds > 0 && minutes == 0) return '<1m';
+    final hours = minutes ~/ 60;
+    final remainder = minutes % 60;
+    return hours == 0 ? '${remainder}m' : '${hours}h ${remainder}m';
+  }
+
+  factory HomeStatistics.fromSessions(
+    List<StudySession> sessions,
+    List<FlashcardReviewEvent> reviews,
+  ) {
+    final timerSessions = sessions
+        .where((session) => session.type == StudySessionType.pomodoro)
+        .toList();
+    final completedFocusSessions = timerSessions
+        .where((session) => session.completed)
+        .toList();
+    final reviewRounds = sessions
+        .where((session) => session.type == StudySessionType.flashcardReview)
+        .toList();
+    final activeDays = <DateTime>{};
+    final activity = <String, DailyStudyActivity>{};
+    final dayFormat = DateUtils.dateOnly;
+    void addSession(StudySession session) {
+      if (session.durationSeconds <= 0 && session.cardsReviewed <= 0) return;
+      final date = session.completedAt;
+      final day = dayFormat(date);
+      final key = _dayKey(day);
+      final current = activity[key] ?? const DailyStudyActivity();
+      final minutes = session.durationSeconds ~/ 60;
+      final isTimer = session.type == StudySessionType.pomodoro;
+      activity[key] = DailyStudyActivity(
+        timerMinutes: current.timerMinutes + (isTimer ? minutes : 0),
+        reviewMinutes: current.reviewMinutes + (isTimer ? 0 : minutes),
+        cardsReviewed: current.cardsReviewed,
+      );
+      activeDays.add(day);
+    }
+
+    for (final session in sessions) {
+      addSession(session);
+    }
+    for (final event in reviews) {
+      final day = dayFormat(event.reviewedAt);
+      final key = _dayKey(day);
+      final current = activity[key] ?? const DailyStudyActivity();
+      activity[key] = DailyStudyActivity(
+        timerMinutes: current.timerMinutes,
+        reviewMinutes: current.reviewMinutes,
+        cardsReviewed: current.cardsReviewed + 1,
+      );
+      activeDays.add(day);
+    }
+
+    final today = dayFormat(DateTime.now());
+    final todayFocusSeconds = timerSessions
+        .where((session) => dayFormat(session.completedAt) == today)
+        .fold<int>(0, (sum, session) => sum + session.durationSeconds);
+    var streak = 0;
+    var cursor = activeDays.contains(today)
+        ? today
+        : today.subtract(const Duration(days: 1));
+    while (activeDays.contains(cursor)) {
+      streak++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+
+    return HomeStatistics(
+      totalStudySeconds: sessions.fold(
+        0,
+        (sum, session) => sum + session.durationSeconds,
+      ),
+      totalFocusSeconds: timerSessions.fold<int>(
+        0,
+        (sum, session) => sum + session.durationSeconds,
+      ),
+      todayFocusSeconds: todayFocusSeconds,
+      focusSessions: completedFocusSessions.length,
+      reviewRounds: reviewRounds.length,
+      studyDays: activeDays.length,
+      currentStreak: streak,
+      activity: activity,
+    );
   }
 }
+
+String _dayKey(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';

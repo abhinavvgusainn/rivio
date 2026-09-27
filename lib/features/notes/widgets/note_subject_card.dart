@@ -11,7 +11,6 @@ class NoteSubjectCard extends StatelessWidget {
     required this.onTap,
     required this.onDelete,
   });
-
   final NoteSubject subject;
   final int fileCount;
   final VoidCallback onTap;
@@ -19,30 +18,58 @@ class NoteSubjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = RivioColors.subject(subject.colorHex);
     return Card(
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         leading: Container(
-          width: 44,
-          height: 44,
-          decoration: const BoxDecoration(
-            color: RivioColors.primaryContainer,
-            shape: BoxShape.circle,
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: .14),
+            borderRadius: BorderRadius.circular(15),
           ),
-          child: const Icon(Icons.folder_outlined, color: RivioColors.primary),
+          child: Icon(Icons.folder_open_rounded, color: accent, size: 27),
         ),
         title: Text(
           subject.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
         subtitle: Text(
-          fileCount == 1 ? '1 PDF' : '$fileCount PDFs',
-          style: const TextStyle(color: RivioColors.textSecondary),
+          '$fileCount ${fileCount == 1 ? 'PDF file' : 'PDF files'}',
+          style: TextStyle(color: accent, fontSize: 13),
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.more_vert, color: RivioColors.textSecondary),
-          onPressed: onDelete,
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'delete') {
+              showDialog<void>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Delete subject?'),
+                  content: Text(
+                    '“${subject.name}” and its saved PDF links will be removed.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onDelete();
+                      },
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(value: 'delete', child: Text('Delete subject')),
+          ],
         ),
       ),
     );

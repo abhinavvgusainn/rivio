@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme.dart';
-
-/// One small metric tile (total time, sessions, cards reviewed, ...).
-/// Home lays several of these out in a grid.
 class StatisticsCard extends StatelessWidget {
   const StatisticsCard({
     super.key,
@@ -24,24 +20,11 @@ class StatisticsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: RivioColors.primary, size: 22),
+            Icon(icon),
             const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: RivioColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: RivioColors.textSecondary,
-              ),
-            ),
+            Text(label),
+            const SizedBox(height: 8),
+            Text(value),
           ],
         ),
       ),

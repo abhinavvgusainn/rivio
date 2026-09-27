@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../services/interaction_feedback.dart';
 
-/// A single flip-able flashcard used in the review screen.
-/// Tapping flips between the front (question) and back (answer).
 class FlashcardView extends StatefulWidget {
   const FlashcardView({
     super.key,
     required this.front,
     required this.back,
+    this.onFlipped,
   });
-
   final String front;
   final String back;
+  final ValueChanged<bool>? onFlipped;
 
   @override
   State<FlashcardView> createState() => _FlashcardViewState();
@@ -20,83 +20,130 @@ class FlashcardView extends StatefulWidget {
 
 class _FlashcardViewState extends State<FlashcardView>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+  late final AnimationController _flip = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 300),
+    duration: const Duration(milliseconds: 360),
   );
-  bool _showingFront = true;
+  bool _showBack = false;
 
-  void _flip() {
-    if (_showingFront) {
-      _controller.forward();
+  void _toggle() {
+    if (_showBack) {
+      _flip.reverse();
     } else {
-      _controller.reverse();
+      _flip.forward();
     }
-    setState(() => _showingFront = !_showingFront);
+    setState(() => _showBack = !_showBack);
+    widget.onFlipped?.call(_showBack);
+    InteractionFeedback.tap();
   }
 
   @override
   void didUpdateWidget(covariant FlashcardView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.front != widget.front) {
-      _controller.value = 0;
-      _showingFront = true;
+    if (oldWidget.front != widget.front || oldWidget.back != widget.back) {
+      _flip.value = 0;
+      _showBack = false;
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _flip.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _flip,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final angle = _controller.value * 3.14159;
-          final isBack = angle > 3.14159 / 2;
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateY(angle),
-            child: isBack
-                ? Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.identity()..rotateY(3.14159),
-                    child: _buildFace(widget.back, isFront: false),
-                  )
-                : _buildFace(widget.front, isFront: true),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildFace(String text, {required bool isFront}) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 240),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isFront ? RivioColors.surface : RivioColors.primaryContainer,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RivioColors.border),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: RivioColors.textPrimary,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: _toggle,
+    child: AnimatedBuilder(
+      animation: _flip,
+      builder: (context, child) {
+        final angle = _flip.value * 3.141592653589793;
+        final backFace = angle > 1.5707963267948966;
+        return Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, .001)
+            ..rotateY(angle),
+          child: backFace
+              ? Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()..rotateY(3.141592653589793),
+                  child: child,
+                )
+              : child,
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(minHeight: 205),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: _showBack ? const Color(0xFFF0F4F1) : const Color(0xFFF3F5F4),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: RivioColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  _showBack ? 'ANSWER · DEFINITION' : 'PROMPT · QUESTION',
+                  style: const TextStyle(
+                    color: RivioColors.secondaryText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .5,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  _showBack
+                      ? Icons.check_circle_outline
+                      : Icons.lightbulb_outline,
+                  size: 19,
+                  color: RivioColors.secondaryText,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: Text(
+                _showBack ? widget.back : widget.front,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  height: 1.3,
+                  fontWeight: FontWeight.w700,
+                  color: RivioColors.text,
+                ),
+              ),
+            ),
+            const SizedBox(height: 15),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: RivioColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: RivioColors.border),
+                ),
+                child: Text(
+                  _showBack ? 'Tap to see question' : 'Tap to reveal answer  ↻',
+                  style: const TextStyle(
+                    color: RivioColors.secondaryText,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

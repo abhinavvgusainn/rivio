@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
 
-/// Start/Pause + Reset controls for the Pomodoro timer.
 class TimerControls extends StatelessWidget {
   const TimerControls({
     super.key,
@@ -10,38 +9,42 @@ class TimerControls extends StatelessWidget {
     required this.onStartPause,
     required this.onReset,
   });
-
   final bool isRunning;
   final VoidCallback onStartPause;
   final VoidCallback onReset;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        OutlinedButton(
-          onPressed: onReset,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.all(18),
-            shape: const CircleBorder(),
-            side: const BorderSide(color: RivioColors.border),
-          ),
-          child: const Icon(Icons.refresh, color: RivioColors.textSecondary),
-        ),
-        const SizedBox(width: 20),
-        ElevatedButton(
+  Widget build(BuildContext context) => Column(
+    children: [
+      SizedBox(
+        width: double.infinity,
+        height: 62,
+        child: FilledButton.icon(
           onPressed: onStartPause,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.all(24),
-            shape: const CircleBorder(),
+          icon: Icon(
+            isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            size: 25,
           ),
-          child: Icon(
-            isRunning ? Icons.pause : Icons.play_arrow,
-            size: 32,
+          label: Text(
+            isRunning ? 'Pause Session' : 'Start Session',
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
         ),
-      ],
-    );
-  }
+      ),
+      const SizedBox(height: 7),
+      Row(
+        children: [
+          TextButton.icon(
+            onPressed: onReset,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Reset'),
+            style: TextButton.styleFrom(
+              foregroundColor: RivioColors.secondaryText,
+            ),
+          ),
+          const Spacer(),
+        ],
+      ),
+    ],
+  );
 }

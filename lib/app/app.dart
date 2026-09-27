@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../database/database.dart';
@@ -7,10 +9,9 @@ import '../features/notes/notes_screen.dart';
 import '../features/pomodoro/pomodoro_screen.dart';
 import 'theme.dart';
 
-/// Root widget. Owns the single [AppDatabase] instance and the
-/// bottom navigation between the four main sections.
 class RivioApp extends StatefulWidget {
-  const RivioApp({super.key});
+  const RivioApp({super.key, this.database});
+  final AppDatabase? database;
 
   @override
   State<RivioApp> createState() => _RivioAppState();
@@ -18,88 +19,80 @@ class RivioApp extends StatefulWidget {
 
 class _RivioAppState extends State<RivioApp> {
   late final AppDatabase _database;
+  late final bool _ownsDatabase;
 
   @override
   void initState() {
     super.initState();
-    _database = AppDatabase();
+    _ownsDatabase = widget.database == null;
+    _database = widget.database ?? AppDatabase();
   }
 
   @override
   void dispose() {
-    _database.close();
+    if (_ownsDatabase) unawaited(_database.close());
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Rivio',
-      debugShowCheckedModeBanner: false,
-      theme: RivioTheme.light,
-      home: RivioHome(database: _database),
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
+    title: 'StudyFlow',
+    theme: RivioTheme.light,
+    home: MainNavigation(database: _database),
+  );
 }
 
-class RivioHome extends StatefulWidget {
-  const RivioHome({super.key, required this.database});
-
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key, required this.database});
   final AppDatabase database;
 
   @override
-  State<RivioHome> createState() => _RivioHomeState();
+  State<MainNavigation> createState() => _MainNavigationState();
 }
 
-class _RivioHomeState extends State<RivioHome> {
-  int _index = 0;
-
-  static const _destinations = [
-    NavigationDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home),
-      label: 'Home',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.timer_outlined),
-      selectedIcon: Icon(Icons.timer),
-      label: 'Pomodoro',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.picture_as_pdf_outlined),
-      selectedIcon: Icon(Icons.picture_as_pdf),
-      label: 'Notes',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.style_outlined),
-      selectedIcon: Icon(Icons.style),
-      label: 'Flashcards',
-    ),
-  ];
+class _MainNavigationState extends State<MainNavigation> {
+  int _currentIndex = 0;
 
   @override
-  Widget build(BuildContext context) {
-    final db = widget.database;
-
-    return Scaffold(
-      // IndexedStack keeps each tab's scroll position / in-flight
-      // state alive when switching tabs, per the product spec.
-      body: SafeArea(
-        child: IndexedStack(
-          index: _index,
-          children: [
-            HomeScreen(database: db),
-            PomodoroScreen(database: db),
-            NotesScreen(database: db),
-            FlashcardsScreen(database: db),
-          ],
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      bottom: false,
+      child: IndexedStack(
+        index: _currentIndex,
+        children: [
+          HomeScreen(database: widget.database),
+          PomodoroScreen(database: widget.database),
+          NotesScreen(database: widget.database),
+          FlashcardsScreen(database: widget.database),
+        ],
+      ),
+    ),
+    bottomNavigationBar: NavigationBar(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: (index) => setState(() => _currentIndex = index),
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.grid_view_rounded),
+          selectedIcon: Icon(Icons.grid_view_rounded),
+          label: 'Home',
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: _destinations,
-      ),
-    );
-  }
+        NavigationDestination(
+          icon: Icon(Icons.timer_outlined),
+          selectedIcon: Icon(Icons.timer_rounded),
+          label: 'Timer',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.description_outlined),
+          selectedIcon: Icon(Icons.description_rounded),
+          label: 'Notes',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.style_outlined),
+          selectedIcon: Icon(Icons.style_rounded),
+          label: 'Flashcards',
+        ),
+      ],
+    ),
+  );
 }

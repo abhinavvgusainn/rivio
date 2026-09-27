@@ -1,3 +1,1 @@
-import '../database/database.dart';
-
-typedef FlashcardModel = Flashcard;
+export '../database/database.dart' show Flashcard;
