@@ -53,8 +53,13 @@ class InteractionFeedback {
 
   static void celebrate({bool sound = true}) {
     if (!enabled) return;
-    if (sound) unawaited(_play('bell.mp3'));
+    if (sound) playBell();
     unawaited(HapticFeedback.mediumImpact().catchError((_) {}));
+  }
+
+  static void playBell() {
+    if (!enabled) return;
+    unawaited(_play('bell.mp3'));
   }
 
   static void deckCompleted() {

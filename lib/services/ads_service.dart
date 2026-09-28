@@ -12,10 +12,6 @@ class AdsService with WidgetsBindingObserver {
 
   static final AdsService instance = AdsService._();
 
-  static const _androidAppOpenTestId = 'ca-app-pub-3940256099942544/9257395921';
-  static const _iosAppOpenTestId = 'ca-app-pub-3940256099942544/5575463023';
-  static const _androidNativeTestId = 'ca-app-pub-3940256099942544/2247696110';
-  static const _iosNativeTestId = 'ca-app-pub-3940256099942544/3986624511';
   static const _androidAppOpenId = 'ca-app-pub-5770713859706238/6828053177';
   static const _androidNotesNativeId = 'ca-app-pub-5770713859706238/9734427274';
   static const _androidSubjectNativeId =
@@ -38,8 +34,9 @@ class AdsService with WidgetsBindingObserver {
   bool _initializingSdk = false;
   bool _loadingAppOpenAd = false;
   bool _showingAppOpenAd = false;
+  final Completer<void> _initialAppOpenLoadSettled = Completer<void>();
 
-  bool get _supportedPlatform => Platform.isAndroid || Platform.isIOS;
+  bool get _supportedPlatform => Platform.isAndroid;
 
   Duration get _appOpenCooldown =>
       kReleaseMode ? const Duration(hours: 4) : const Duration(seconds: 30);
@@ -62,6 +59,21 @@ class AdsService with WidgetsBindingObserver {
     } catch (_) {
       await _refreshConsentAndInitialize();
     }
+  }
+
+  Future<void> waitForStartupAppOpenAd({
+    Duration timeout = const Duration(milliseconds: 700),
+  }) async {
+    if (_appOpenAd != null || !_supportedPlatform) return;
+    await Future.any<void>([
+      _initialAppOpenLoadSettled.future,
+      Future<void>.delayed(timeout),
+    ]);
+  }
+
+  void showStartupAppOpenAd() {
+    if (_appOpenAd == null || !canRequestAdsNotifier.value) return;
+    _showAppOpenAd();
   }
 
   Future<void> _completeConsentFlow() async {
@@ -116,22 +128,28 @@ class AdsService with WidgetsBindingObserver {
             _loadingAppOpenAd = false;
             _appOpenAd = ad;
             _appOpenLoadedAt = DateTime.now();
-            if (kDebugMode) debugPrint('App-open ad loaded and ready.');
+            if (!_initialAppOpenLoadSettled.isCompleted) {
+              _initialAppOpenLoadSettled.complete();
+            }
           },
           onAdFailedToLoad: (error) {
             _loadingAppOpenAd = false;
-            if (kDebugMode) debugPrint('App-open ad failed to load: $error');
+            if (!_initialAppOpenLoadSettled.isCompleted) {
+              _initialAppOpenLoadSettled.complete();
+            }
           },
         ),
       ).catchError((_) {
         _loadingAppOpenAd = false;
+        if (!_initialAppOpenLoadSettled.isCompleted) {
+          _initialAppOpenLoadSettled.complete();
+        }
       }),
     );
   }
 
   String get _appOpenAdUnitId {
-    if (kReleaseMode && Platform.isAndroid) return _androidAppOpenId;
-    return Platform.isAndroid ? _androidAppOpenTestId : _iosAppOpenTestId;
+    return _androidAppOpenId;
   }
 
   String get notesNativeAdUnitId => _nativeUnitId(_androidNotesNativeId);
@@ -142,8 +160,7 @@ class AdsService with WidgetsBindingObserver {
       _nativeUnitId(_androidFlashcardsNativeId);
 
   String _nativeUnitId(String androidProductionId) {
-    if (kReleaseMode && Platform.isAndroid) return androidProductionId;
-    return Platform.isAndroid ? _androidNativeTestId : _iosNativeTestId;
+    return androidProductionId;
   }
 
   Future<void> showPrivacyOptions() async {

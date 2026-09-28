@@ -262,8 +262,10 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
                       onPressed: () {
-                        setState(() => _bellCue = !_bellCue);
+                        final turningOn = !_bellCue;
+                        setState(() => _bellCue = turningOn);
                         InteractionFeedback.tap();
+                        if (turningOn) InteractionFeedback.playBell();
                       },
                       icon: Icon(
                         _bellCue

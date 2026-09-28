@@ -9,7 +9,7 @@ import 'services/interaction_feedback.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const RivioApp());
   unawaited(InteractionFeedback.initialize());
   unawaited(AdsService.instance.initialize());
+  runApp(const RivioApp());
 }

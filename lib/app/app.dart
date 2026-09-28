@@ -7,8 +7,10 @@ import '../features/flashcards/flashcards_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/notes/notes_screen.dart';
 import '../features/pomodoro/pomodoro_screen.dart';
+import '../services/ads_service.dart';
 import '../services/interaction_feedback.dart';
 import 'theme.dart';
+import 'widgets/launch_splash_screen.dart';
 
 class RivioApp extends StatefulWidget {
   const RivioApp({super.key, this.database});
@@ -45,8 +47,42 @@ class _RivioAppState extends State<RivioApp> {
       onPointerDown: (_) => InteractionFeedback.stopSound(),
       child: child ?? const SizedBox.shrink(),
     ),
-    home: MainNavigation(database: _database),
+    home: _LaunchGate(database: _database),
   );
+}
+
+class _LaunchGate extends StatefulWidget {
+  const _LaunchGate({required this.database});
+
+  final AppDatabase database;
+
+  @override
+  State<_LaunchGate> createState() => _LaunchGateState();
+}
+
+class _LaunchGateState extends State<_LaunchGate> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_finishSplash());
+  }
+
+  Future<void> _finishSplash() async {
+    await Future<void>.delayed(const Duration(milliseconds: 650));
+    await AdsService.instance.waitForStartupAppOpenAd();
+    if (!mounted) return;
+    setState(() => _showSplash = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AdsService.instance.showStartupAppOpenAd();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => _showSplash
+      ? const LaunchSplashScreen()
+      : MainNavigation(database: widget.database);
 }
 
 class MainNavigation extends StatefulWidget {
